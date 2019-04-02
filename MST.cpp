@@ -11,8 +11,8 @@
 #include <climits>
 
 struct Edge {
-    int weight, dest;
-    Edge(int w, int d) { weight = w; dest = d; }
+    int weight, orig, dest;
+    Edge(int w, int o, int d) { weight = w; orig = o; dest = d; }
 };
 
 struct Node {
@@ -48,8 +48,8 @@ void generateGraph(Node* graph, int n, double p) {
 			for (int j = i + 1; j < n; j++) {
 				if (p > rand() / INT_MAX) {
 					int w = rand() % 100 + 1;
-					graph[i].neighbors.push_back(Edge(w, j));
-					graph[j].neighbors.push_back(Edge(w, i));
+					graph[i].neighbors.push_back(Edge(w, i, j));
+					graph[j].neighbors.push_back(Edge(w, j, i));
 				}
 			}
 		}
@@ -63,9 +63,51 @@ void generateGraph(Node* graph, int n, double p) {
 	}
 }
 
+int treeCost(Edge** tree, int n) {
+	int c = 0;
+	for (int i = 0; i < n; i++) {
+		c += tree[i]-> weight;
+	}
+	return c;
+}
+
+void initializeTree(Node* graph, Edge** tree, int n) {
+	bool visited[n];
+	for (int i = 0; i < n; i++)
+		visited[i] = false;
+	n -= 2;
+	stack<int> open;
+	open.push(0);
+	while(!open.empty()) {
+		int current = open.top();
+		open.pop();
+		vector<Edge>& neighbors = graph[current].neighbors;
+		for (uint i = 0; i < neighbors.size(); i++) {
+			int dest = neighbors[i].dest;
+			if (!visited[dest]) {
+				visited[dest] = true;
+				open.push(dest);
+				tree[n] = &neighbors[i];
+				n--;
+			}
+		}
+	}
+}
+
+void firstImprovement(Node* graph, Edge** tree, int n) {
+	
+}
+
+void bestImprovement(Node* graph, Edge** tree, int n) {
+	
+}
+
 void test(int n, double p) {
     Node graph[n];
+    Edge* tree[n - 1];
     generateGraph(graph, n, p);
+    initializeTree(graph, tree, n);
+    firstImprovement(graph, tree, n);
 }
 
 int main() {
