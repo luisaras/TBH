@@ -70,13 +70,15 @@ public:
 
 	// Creates an initial spanning tree.
     int* initializeTree() {
-		// Initialize "visited" flags
-        bool visited[n];
-        for (int i = 0; i < n; i++)
-            visited[i] = false;
         // Initialize tree
         int* tree = new int[n - 1];
         int t = 0;
+		// Initialize "visited" flags
+        bool visited[n];
+        for (int i = 1; i < n; i++)
+            visited[i] = false;
+        visited[0] = true;
+        // Initialize stack
         stack<int> open;
         open.push(0);
         while(!open.empty()) {
@@ -89,6 +91,7 @@ public:
                     visited[v] = true;
                     open.push(v);
                     tree[t++] = e; // Insert edge in the spanning tree
+                    cout << edges[e].orig << "-" << edges[e].dest << endl;
                 }
             }
         }
@@ -129,23 +132,27 @@ private:
 
 	// Checks if graph is connected using DFS.
     inline bool isConnected() {
+		// Initialize "visited" flags
         bool visited[n];
-        for (int i = 0; i < n; i++)
+        for (int i = 1; i < n; i++)
             visited[i] = false;
+        visited[0] = true;
+        // Initialize stack
         stack<int> open;
         open.push(0);
         while(!open.empty()) {
             int current = open.top();
             open.pop();
-            if (visited[current])
-                continue;
-            visited[current] = true;
             for (auto it = nodes[current].begin(); it != nodes[current].end(); ++it) {
 				int e = *it; // Neighbor edge of node i
 				int v = edges[e].dest == current ? edges[e].orig : edges[e].dest; // Neighbor of node i
-                open.push(v);
+				if (!visited[v]) {
+					visited[v] = true;
+					open.push(v);
+				}
             }
         }
+        // If any of the nodes was not visited
         for (int i = 0; i < n; i++)
             if (!visited[i])
                 return false;
