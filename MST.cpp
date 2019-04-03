@@ -20,6 +20,9 @@
 struct Edge {
     int weight, orig, dest;
     Edge(int w, int o, int d) { weight = w; orig = o; dest = d; }
+    inline int neighbor(int v) {
+        return orig == v ? dest : orig;
+    }
 };
 bool compareEdges(const Edge& e1, const Edge& e2) {
     return (e1.weight < e2.weight);
@@ -86,12 +89,11 @@ public:
             open.pop();
             for (auto it = nodes[current].begin(); it != nodes[current].end(); ++it) {
 				int e = *it; // Neighbor edge of current node
-				int v = current == edges[e].dest ? edges[e].orig : edges[e].dest; // Neighbor node
+				int v = edges[e].neighbor(current); // Neighbor node
                 if (!visited[v]) { // Neighbor was not visited before
                     visited[v] = true;
                     open.push(v);
                     tree[t++] = e; // Insert edge in the spanning tree
-                    cout << edges[e].orig << "-" << edges[e].dest << endl;
                 }
             }
         }
@@ -101,7 +103,7 @@ public:
 	// Calculates total cost of tree.
     inline int treeCost(int* tree) {
         int c = 0;
-        for (int i = 0; i < n; i++) {
+        for (int i = 0; i < n - 1; i++) {
             c += edges[tree[i]].weight;
         }
         return c;
@@ -113,8 +115,8 @@ public:
             cout << i << " -> ";
             for (auto it = nodes[i].begin(); it != nodes[i].end(); ++it) {
 				int e = *it; // Neighbor edge of node i
-				int v = edges[e].dest == i ? edges[e].orig : edges[e].dest; // Neighbor of node i
-                cout << v << " ";
+				int v = edges[e].neighbor(i); // Neighbor of node i
+                cout << v << "(" << edges[e].weight << ") ";
 			}
             cout << endl;
         }
@@ -145,7 +147,7 @@ private:
             open.pop();
             for (auto it = nodes[current].begin(); it != nodes[current].end(); ++it) {
 				int e = *it; // Neighbor edge of node i
-				int v = edges[e].dest == current ? edges[e].orig : edges[e].dest; // Neighbor of node i
+				int v = edges[e].neighbor(current); // Neighbor of node i
 				if (!visited[v]) {
 					visited[v] = true;
 					open.push(v);
@@ -161,52 +163,63 @@ private:
 
 };
 
-// Sets "available" flags for each edge in the graph.
-inline void availableEdges(bool* edges, int e, int* tree, int n) {
-    for (int i = 0; i < e; i++)
-        edges[i] = true;
-    for (int i = 0; i < n; i++)
-        edges[tree[i]] = false;
+bool findCycle(int current, int parent, int goal, Graph& graph, int* indexes, set<int>& cycle) {
+    for (auto it = graph.nodes[current].begin(); it != graph.nodes[current].end(); ++it) {
+        int e = *it; // Neighbor edge
+        if (indexes[e] == -1) continue; // Ignore if not in the tree
+        int v = graph.edges[e].neighbor(current);
+        if (v == parent) continue; // Ignore if current node came from this edge
+        if (v == goal || findCycle(v, current, goal, graph, indexes, cycle)) {
+            cycle.insert(e);
+            return true;
+        }
+    }
+    return false;
 }
 
-// Gets a set of edges in 
-inline set<int> findCycle(Graph graph, int* tree, int e, bool* available) {
+set<int> findCycle(Graph& graph, int edge, int* indexes) {
     set<int> cycle;
-    
-    //int root = graph.edges[e].dest;
-    // TODO
+    int start = graph.edges[edge].dest;
+    int goal = graph.edges[edge].orig;
+    // Insert cycle edges
+    findCycle(start, goal, goal, graph, indexes, cycle);
     return cycle;
 }
 
 // Modifies the given tree of the first variation that shows improvement.
-inline bool firstImprovement(Graph& graph, int* tree, bool* available) {
-    for (int e = 0; e < (int) graph.edges.size(); e++) {
-        if (available[e]) {
-			int cost = graph.edges[e].weight;
-            set<int> cycle = findCycle(graph, tree, e, available);
-			for (auto it = cycle.begin(); it != cycle.end(); ++it) {
-				if (graph.edges[*it].weight < cost) {
-					available[tree[e]] = true;
-					available[*it] = false;
-					tree[e] = *it;
-					return false;
-				}
-			}
+inline bool firstImprovement(Graph& graph, int* tree, int* indexes) {
+    for (int e = 0; e < graph.edges.size(); e++) {
+        if (indexes[e] >= 0) // Ignore if edge is already in the tree
+            continue;
+        int addedCost = graph.edges[e].weight; // Cost of edge to insert
+        set<int> cycle = findCycle(graph, e, indexes);
+        for (auto it = cycle.begin(); it != cycle.end(); ++it) {
+            int removedCost = graph.edges[*it].weight; // cost of edge to remove
+            if (addedCost < removedCost) {
+                // Replace edge
+                tree[indexes[*it]] = e;
+                indexes[e] = indexes[*it];
+                indexes[*it] = -1;
+                return false;
+            }
         }
     }
     return true;
 }
 
 // Modifies the given tree of the variation that shows the best improvement.
-inline void bestImprovement(Graph& graph, int* tree) { 
+inline void bestImprovement(Graph& graph, int* tree) {
 	// TODO
 }
 
 // Modifies tree until a local optima is found.
 inline void localSearch(Graph& graph, int* tree) {
-    bool available[graph.edges.size()];
-    availableEdges(available, graph.edges.size(), tree, graph.n - 1);
-    while(!firstImprovement(graph, tree, available));
+    int indexes[graph.edges.size()];
+    for (int i = 0; i < graph.edges.size(); i++)
+        indexes[i] = -1;
+    for (int i = 0; i < graph.n - 1; i++)
+        indexes[tree[i]] = i;
+    while(!firstImprovement(graph, tree, indexes));
 }
 
 inline void test(int n, double p) {
@@ -216,16 +229,16 @@ inline void test(int n, double p) {
     int* tree = graph.initializeTree();
     cout << endl << "Initial tree: " << endl;
     graph.printTree(tree);
-    //localSearch(graph, tree);
-    //cout << endl << "Optimal tree: " << endl;
-    //graph.printTree(tree);
+    localSearch(graph, tree);
+    cout << endl << "Optimal tree: " << endl;
+    graph.printTree(tree);
 }
 
 int main() {
     //srand (time(NULL));
     srand(100);
 
-    test(5, 0.5);
+    test(100, 0.1);
 
     for(int i = 11; i < 10; i++) {
 
