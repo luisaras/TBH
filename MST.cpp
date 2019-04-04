@@ -10,6 +10,8 @@
 	using std::set;
 #include <algorithm>
     using std::sort;
+#include <chrono>
+    using namespace std::chrono;
 #include <cstdlib>
 #include <ctime>
 #include <climits>
@@ -208,51 +210,110 @@ inline bool firstImprovement(Graph& graph, int* tree, int* indexes) {
 }
 
 // Modifies the given tree of the variation that shows the best improvement.
-inline void bestImprovement(Graph& graph, int* tree) {
-	// TODO
+inline bool bestImprovement(Graph& graph, int* tree, int* indexes) {
+    int bestDiff = 0;
+    int removed, added;
+    for (int e = 0; e < graph.edges.size(); e++) {
+        if (indexes[e] >= 0) // Ignore if edge is already in the tree
+            continue;
+        int addedCost = graph.edges[e].weight; // Cost of edge to insert
+        set<int> cycle = findCycle(graph, e, indexes);
+        for (auto it = cycle.begin(); it != cycle.end(); ++it) {
+            int costDiff = graph.edges[*it].weight - addedCost; // cost of edge to remove
+            if (costDiff > bestDiff) {
+                // Replace edge
+                bestDiff = costDiff;
+                removed = *it;
+                added = e;
+            }
+        }
+    }
+    if (bestDiff > 0) {
+        tree[indexes[removed]] = added;
+        indexes[added] = indexes[removed];
+        indexes[removed] = -1;
+        return false;
+    } else {
+        return true;
+    }
 }
 
-// Modifies tree until a local optima is found.
-inline void localSearch(Graph& graph, int* tree) {
-    int indexes[graph.edges.size()];
+inline void initializeIndexes(Graph& graph, int* tree, int* indexes) {
     for (int i = 0; i < graph.edges.size(); i++)
         indexes[i] = -1;
     for (int i = 0; i < graph.n - 1; i++)
         indexes[tree[i]] = i;
-    while(!firstImprovement(graph, tree, indexes));
 }
 
-inline void test(int n, double p) {
+inline void compare(int n, double p) {
+    Graph graph(n, p);
+    graph.sortByWeight();
+    //graph.print();
+    int indexes[graph.edges.size()];
+
+    int* tree;
+    high_resolution_clock::time_point t1, t2;
+
+    // First improvement
+
+    tree = graph.initializeTree();
+    initializeIndexes(graph, tree, indexes);
+    t1 = high_resolution_clock::now();
+    while(!firstImprovement(graph, tree, indexes));
+    t2 = high_resolution_clock::now();
+    cout << "First improvement time: \t" << duration_cast<microseconds>( t2 - t1 ).count() << endl;
+    delete[] tree;
+
+    // Best improvement
+
+    tree = graph.initializeTree();
+    initializeIndexes(graph, tree, indexes);
+    t1 = high_resolution_clock::now();
+    while(!bestImprovement(graph, tree, indexes));
+    t2 = high_resolution_clock::now();
+    cout << "Best improvement time: \t\t" << duration_cast<microseconds>( t2 - t1 ).count() << endl;
+    delete[] tree;
+
+}
+
+void test(int n, double p) {
     Graph graph(n, p);
     graph.sortByWeight();
     graph.print();
+
     int* tree = graph.initializeTree();
     cout << endl << "Initial tree: " << endl;
     graph.printTree(tree);
-    localSearch(graph, tree);
+
+    int indexes[graph.edges.size()];
+    initializeIndexes(graph, tree, indexes);
+
+    while(!bestImprovement(graph, tree, indexes));
+
     cout << endl << "Optimal tree: " << endl;
     graph.printTree(tree);
+
+    delete[] tree;
 }
 
 int main() {
     //srand (time(NULL));
     srand(100);
-
-    test(100, 0.1);
+    test(50, 0.5);
 
     for(int i = 11; i < 10; i++) {
 
-        test(100, 0.1);
-        test(100, 0.2);
-        test(100, 0.3);
+        compare(100, 0.1);
+        compare(100, 0.2);
+        compare(100, 0.3);
 
-        test(250, 0.05);
-        test(250, 0.1);
-        test(250, 0.2);
+        compare(250, 0.05);
+        compare(250, 0.1);
+        compare(250, 0.2);
 
-        test(500, 0.05);
-        test(500, 0.1);
-        test(500, 0.2);
+        compare(500, 0.05);
+        compare(500, 0.1);
+        compare(500, 0.2);
 
     }
 
