@@ -11,8 +11,11 @@
 #include <string>
     using std::string;
     using std::stoi;
+#include <chrono>
 #include <cstdlib>
 #include <ctime>
+#include <ctime>
+using namespace std::chrono;
 #define Clause vector<int>
 
 struct Formula {
@@ -72,11 +75,11 @@ int walksat(Formula& formula, bool* solution) {
 	vector<int> unsat = formula.unsatClauses(solution);
 	int c = rand() % unsat.size();
 	Clause& clause = formula.clauses[unsat[c]];
-	cout << "clause " << c << " of " << unsat.size() << " " << clause.size() << endl;
+	//cout << "clause " << c << " of " << unsat.size() << " " << clause.size() << endl;
 	int best = 0;
 	int vbest = formula.testFlip(index(clause[0]), solution);
 	for (int i = 1; i < (int) clause.size(); i++) {
-		cout << "var " << i << endl;
+		//cout << "var " << i << endl;
         int vi = formula.testFlip(index(clause[i]), solution);
         if (vi > vbest) {
             best = i;
@@ -138,29 +141,42 @@ int test(string name, int maxit) {
 	Formula formula;
 	readFormula(formula, file);
 	file.close();
+	
 	// Initial solution
-    bool solution[formula.v];
+    bool gsolution[formula.v];
+    bool wsolution[formula.v];
     for (int i = 0; i < formula.v; i++) {
-        solution[i] = rand() % 2;
+        gsolution[i] = rand() % 2;
+        wsolution[i] = gsolution[i];
     }
-    int current = formula.evaluate(solution);
-    cout << "initial solution: " << current << endl;
-    // Improve solution
-    while (--maxit >= 0) {
-        int e = gsat(formula, solution);
-        //int e = walksat(formula, solution);
-        if (e > current)
-            current = e;
-        //else
-        //    break;
-    }
-    // Return solution
-    cout << "final solution: " << current << endl;
+    int current = formula.evaluate(gsolution);
+    cout << "Initial solution: " << current << endl;
+    
+    high_resolution_clock::time_point t1, t2;
+    
+    // GSAT
+    cout << "GSAT:" << endl;
+    t1 = high_resolution_clock::now();
+    for (int i = 0; i < maxit; i++) {
+		current = gsat(formula, gsolution);
+	}
+	t2 = high_resolution_clock::now();
+	cout << current << " clauses in " << duration_cast<microseconds>( t2 - t1 ).count() << "ms" << endl;
+	
+	// WalkSAT
+	cout << "WalkSAT:" << endl;
+	t1 = high_resolution_clock::now();
+    for (int i = 0; i < maxit; i++) {
+		current = walksat(formula, wsolution);
+	}
+	t2 = high_resolution_clock::now();
+	cout << current << " clauses in " << duration_cast<microseconds>( t2 - t1 ).count() << "ms" << endl;
+	
     return current;
 }
 
 int main() {
-    srand(time(NULL));
+    srand(0);
 
 	test("flat75-1.cnf", 200);
 
