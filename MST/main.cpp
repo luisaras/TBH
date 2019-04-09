@@ -3,100 +3,76 @@
 #include <cstdlib>
 #include <ctime>
 #include <climits>
+#define SAMPLES 10
 using namespace std::chrono;
 
+struct Result {
+	double first_its = 0;
+	double best_its = 0;
+	double first_time = 0;
+	double best_time = 0;
+};
+
 inline void compare(int n, double p) {
-    Graph graph(n, p);
-    /*graph.print();
-    cout << "Edges: ";
-    for (Edge e : graph.edges) {
-		cout << e.orig << "-" << e.dest << " ";
-	}
-	cout << endl;*/
-    
+	Result result;
 	int* tree;
-	int indexes[graph.edges.size()];
     high_resolution_clock::time_point t1, t2;
 
-    // First improvement
+	cout << "n = " << n << ", p = " << p << endl;
+	
 
-    tree = graph.initializeTree();
-    initializeIndexes(graph, tree, indexes);
-    cout << endl << "First Improvement:" << endl;
-    t1 = high_resolution_clock::now();
-    while(firstImprovement(graph, tree, indexes));
-    t2 = high_resolution_clock::now();
-    graph.printTree(tree);
-    cout << "Time: " << duration_cast<microseconds>( t2 - t1 ).count() << endl;
-    delete[] tree;
+	for (int i = 0; i < SAMPLES; i++) {
 
-    // Best improvement
+		Graph graph(n, p);
+		int indexes[graph.edges.size()];
 
-    tree = graph.initializeTree();
-    initializeIndexes(graph, tree, indexes);
-    cout << endl << "Best Improvement:" << endl;
-    t1 = high_resolution_clock::now();
-    while(bestImprovement(graph, tree, indexes));
-    t2 = high_resolution_clock::now();
-    graph.printTree(tree);
-    cout << "Time: " << duration_cast<microseconds>( t2 - t1 ).count() << endl;
-    delete[] tree;
+		// First improvement
 
-    // Kruskal
+		tree = graph.initializeTree();
+		initializeIndexes(graph, tree, indexes);
+		t1 = high_resolution_clock::now();
+		while(firstImprovement(graph, tree, indexes)) result.first_its++;
+		t2 = high_resolution_clock::now();
+		result.first_time += duration_cast<microseconds>( t2 - t1 ).count();
+		delete[] tree;
 
-    tree = new int[graph.n - 1];
-    cout << endl << "Kruskal:" << endl;
-    t1 = high_resolution_clock::now();
-    kruskal(graph, tree, indexes);
-    t2 = high_resolution_clock::now();
-    graph.printTree(tree);
-    cout << "Time: " << duration_cast<microseconds>( t2 - t1 ).count() << endl;
-    delete[] tree;
+		// Best improvement
 
-	cout << endl;
+		tree = graph.initializeTree();
+		initializeIndexes(graph, tree, indexes);
+		t1 = high_resolution_clock::now();
+		while(bestImprovement(graph, tree, indexes)) result.best_its++;
+		t2 = high_resolution_clock::now();
+		result.best_time += duration_cast<microseconds>( t2 - t1 ).count();
+		delete[] tree;
+    
+	}
+	
+	result.first_its /= SAMPLES;
+	result.best_its /= SAMPLES;
+	result.first_time /= SAMPLES;
+	result.best_time /= SAMPLES;
+    
+    cout << "First Improvement: " << result.first_time << " ms, " << result.first_its << " iterations." << endl;
+    cout << "Best Improvement: " << result.best_time << " ms, " << result.best_its << " iterations." << endl;
+    cout << endl;
 
-}
-
-void test(int n, double p) {
-    Graph graph(n, p);
-    graph.sortByWeight();
-    graph.print();
-
-    int* tree = graph.initializeTree();
-    cout << endl << "Initial tree: " << endl;
-    graph.printTree(tree);
-
-    int indexes[graph.edges.size()];
-    initializeIndexes(graph, tree, indexes);
-
-    while(bestImprovement(graph, tree, indexes));
-
-    cout << endl << "Optimal tree: " << endl;
-    graph.printTree(tree);
-
-    delete[] tree;
 }
 
 int main() {
-    //srand (time(NULL));
     srand(0);
-    compare(50, 0.8);
 
-    for(int i = 11; i < 10; i++) {
+	compare(10, 0.1);
+	compare(10, 0.2);
+	compare(10, 0.3);
 
-        compare(100, 0.1);
-        compare(100, 0.2);
-        compare(100, 0.3);
+	compare(25, 0.05);
+	compare(25, 0.1);
+	compare(25, 0.2);
 
-        compare(250, 0.05);
-        compare(250, 0.1);
-        compare(250, 0.2);
-
-        compare(500, 0.05);
-        compare(500, 0.1);
-        compare(500, 0.2);
-
-    }
+	compare(50, 0.05);
+	compare(50, 0.1);
+	compare(50, 0.2);
 
     return 0;
 }
