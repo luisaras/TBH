@@ -14,9 +14,10 @@
 #include <chrono>
 #include <cstdlib>
 #include <ctime>
-#include <ctime>
+#include <climits>
 using namespace std::chrono;
 #define Clause vector<int>
+
 
 struct Formula {
     int v, c;
@@ -105,7 +106,13 @@ int gsat(Formula& formula, bool* solution) {
     return vbest;
 }
 
-void readFormula(Formula& f, istream& stream) {
+Formula readFormula(string& name) {
+	ifstream stream(name);
+	Formula f;
+    if (!stream) {
+        cerr << "Unable to open file: " << name;
+        return f;
+    }
     string s;
     int c; // current clause
     while (stream >> s) {
@@ -119,6 +126,8 @@ void readFormula(Formula& f, istream& stream) {
                    >> f.c; // number of clauses
             f.clauses = new Clause[f.c];
             c = 0;
+        } else if (s == "%") {
+        	break;
         } else {
             // New clause
             f.clauses[c].push_back(stoi(s));
@@ -129,56 +138,55 @@ void readFormula(Formula& f, istream& stream) {
             c++;
         }
     }
+    stream.close();
+    return f;
 }
 
-int test(string name, int maxit) {
-	// Read file
-    ifstream file(name);
-    if (!file) {
-        cerr << "Unable to open file: " << name;
-        return -1;
-    }
-	Formula formula;
-	readFormula(formula, file);
-	file.close();
-	
-	// Initial solution
-    bool gsolution[formula.v];
-    bool wsolution[formula.v];
-    for (int i = 0; i < formula.v; i++) {
-        gsolution[i] = rand() % 2;
-        wsolution[i] = gsolution[i];
-    }
-    int current = formula.evaluate(gsolution);
-    cout << "Initial solution: " << current << endl;
-    
-    high_resolution_clock::time_point t1, t2;
-    
-    // GSAT
+void resetSolution(bool* solution, int n) {
+    for (int i = 0; i < n; i++)
+        solution[i] = rand() % 2;
+}
+
+void testSearch(Formula& formula, bool* initSolution, int (*search)(Formula&, bool*), 
+		int retry, uint maxit = UINT_MAX) {
+	bool solution[formula.v];
+	for (int i = 0; i < formula.v; i++)
+		solution[i] = initSolution[i];
+	high_resolution_clock::time_point t1 = high_resolution_clock::now();
+	int i = 0, best = 0;
+	for (int current = formula.evaluate(solution); i < formula.c && maxit > 0; i++, maxit--) {
+	    if (i >= retry) {
+	    	resetSolution(solution, formula.v);
+	    	cout << "Best solution: " << current << endl;
+	    	if (current > best) best = current;
+	    	i = 0;
+	    }
+	    current = search(formula, solution);
+	    if (current == formula.c) {
+	    	best = current;
+	    	break;
+	    }
+	}
+	high_resolution_clock::time_point t2 = high_resolution_clock::now();
+	cout << best << " clauses in " << duration_cast<microseconds>(t2 - t1).count() << "ms"
+		<< " and " << i << " iterations. " << endl;
+}
+
+void test(string name) {
+	Formula formula = readFormula(name);
+	cout << formula.c << " clauses." << endl;
+    bool initSolution[formula.v];
+    resetSolution(initSolution, formula.v);
     cout << "GSAT:" << endl;
-    t1 = high_resolution_clock::now();
-    for (int i = 0; i < maxit; i++) {
-		current = gsat(formula, gsolution);
-	}
-	t2 = high_resolution_clock::now();
-	cout << current << " clauses in " << duration_cast<microseconds>( t2 - t1 ).count() << "ms" << endl;
-	
-	// WalkSAT
-	cout << "WalkSAT:" << endl;
-	t1 = high_resolution_clock::now();
-    for (int i = 0; i < maxit; i++) {
-		current = walksat(formula, wsolution);
-	}
-	t2 = high_resolution_clock::now();
-	cout << current << " clauses in " << duration_cast<microseconds>( t2 - t1 ).count() << "ms" << endl;
-	
-    return current;
+    testSearch(formula, initSolution, gsat, formula.v * 3);
+    cout << "WalkSAT:" << endl;
+    testSearch(formula, initSolution, walksat, formula.v * 3);
 }
 
 int main() {
     srand(0);
 
-	test("flat75-1.cnf", 200);
+	test("flat75-1.cnf");
 
     return 0;
 }
