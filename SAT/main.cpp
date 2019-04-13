@@ -6,6 +6,8 @@
 #include <fstream>
     using std::ifstream;
     using std::istream;
+#include <ostream>
+    using std::ostream;
 #include <vector>
     using std::vector;
 #include <string>
@@ -17,7 +19,6 @@
 #include <climits>
 using namespace std::chrono;
 #define Clause vector<int>
-
 
 struct Formula {
     int v, c;
@@ -155,50 +156,80 @@ int gsat(Formula& formula, bool* solution) {
     return vbest;
 }
 
-void testSearch(Formula& formula, bool* initSolution, int (*search)(Formula&, bool*), 
-		int period, uint maxit = UINT_MAX) {
+void testSearch(ostream& out, Formula& formula, bool* initSolution, 
+		int (*search)(Formula&, bool*), int period, uint maxTime) {
+
 	int i = 0, best = 0, retries = 0;
 	bool solution[formula.v];
 	formula.copySolution(initSolution, solution);
-	high_resolution_clock::time_point t1 = high_resolution_clock::now();
-	for (int current = formula.evaluate(solution); i < formula.c && maxit > 0; i++, maxit--) {
-	    if (i >= period) {
-	    	formula.resetSolution(solution);
-	    	if (current > best)  { 
-	    		best = current;
-	    		cout << "Best solution: " << best << " in " << (retries * period + i) << " steps." << endl;
-	    	}
-	    	i = 0; retries++;
-	    }
+	high_resolution_clock::time_point t1, t2;
+	t1 = high_resolution_clock::now(); t2 = t1;
+	for (int current = formula.evaluate(solution); i < formula.c; i++) {
 	    if (current == formula.c) {
 	    	best = current;
 	    	break;
 	    }
+	    if (duration_cast<milliseconds>(t2 - t1).count() > maxTime) {
+	    	cout << "NA\tNA";
+	    	return;
+	    }
+	    if (i >= period) {
+	    	formula.resetSolution(solution);
+	    	if (current > best)  { 
+	    		best = current;
+	    	}
+	    	i = 0; retries++;
+	    }
 	    current = search(formula, solution);
+	    t2 = high_resolution_clock::now();
 	}
-	high_resolution_clock::time_point t2 = high_resolution_clock::now();
-	cout << best << " clauses in " << duration_cast<microseconds>(t2 - t1).count() << "ms"
-		<< " and " << (retries * period + i) << " steps." << endl;
+	out << duration_cast<milliseconds>(t2 - t1).count() * 0.001f << '\t' << retries;
 }
 
-void test(string& name, string& search) {
+void test(string& formulaName, string& searchName, uint timeLimit) {
 	srand(0);
-	Formula formula(name);
-	cout << formula.c << " clauses." << endl;
+
+	// Get search algorithm
+	int (*search)(Formula&, bool*);
+    if (searchName == "gsat") {
+    	search = gsat;
+    } else { 
+	    search = walksat;
+	}
+
+	// Get formula
+	string formulaFile = formulaName + ".cnf";
+	Formula formula(formulaFile);
+	
+	// Run algorithm
     bool initSolution[formula.v];
     formula.resetSolution(initSolution);
-    if (search.find("gsat") != string::npos) {
-    	cout << "GSAT:" << endl;
-    	testSearch(formula, initSolution, gsat, formula.v * 3);
-    } else { 
-    	cout << "WalkSAT:" << endl;
-	    testSearch(formula, initSolution, walksat, formula.v * 3);
+    for(int i = 1; i <= 15; i++) {
+    	cout << searchName << '\t' 
+    		 << formulaName << '\t'
+    		 << i << '\t';
+    	testSearch(cout, formula, initSolution, search, formula.v * 3, timeLimit);
+    	cout << endl;
 	}
+
 }
 
 int main(int argc, char* argv[]) {
-	string file(argc >= 3 ? argv[2] : argv[1]);
-	string search(argc >= 3 ? argv[1] : "-walksat");
-	test(file, search);
+	// minutes -> seconds -> milliseconds
+	int timeLimit = 20 * 60 * 1000;
+
+	string inst[] = { "flat50-1", "par8-5-c", "flat75-1", "flat100-1" };
+	string gsat = "gsat";
+	string walksat = "walksat";
+
+	test(inst[2], walksat, timeLimit);
+	test(inst[3], gsat, timeLimit);
+	test(inst[3], walksat, timeLimit);
+		
+	//string search(argv[1]);
+	//string file(argv[2]);
+	//uint timeLimit = atoi(argv[3]);
+	//test(file, search, timeLimit);
+
     return 0;
 }
