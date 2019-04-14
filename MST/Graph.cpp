@@ -10,8 +10,7 @@
 	using std::set;
 #include <algorithm>
     using std::sort;
-#include <queue>
-    using std::priority_queue;
+#include <climits>
 
 #define Node set<int>
 
@@ -33,6 +32,15 @@ public:
     int n; // Number of nodes
     Node* nodes; // Each node is a list of edge indexes (edge's position in the graph's edge list)
     vector<Edge> edges; // List of edges
+
+    Graph(Graph& copy) {
+        n = copy.n;
+        nodes = new Node[n];
+        for (int i = 0; i < n; i++) {
+            nodes[i] = copy.nodes[i];
+        }
+        edges = copy.edges;
+    }
 
 	// Creates a random graph with n nodes and edges with probability p.
     Graph(int n, double p) {
@@ -126,6 +134,15 @@ public:
         return heaviest;
     }
 
+    int lightestEdge() {
+        int lightest = INT_MAX;
+        for (uint i = 0; i < edges.size(); i++) {
+            if (edges[i].weight < lightest)
+                lightest = edges[i].weight;
+        }
+        return lightest;
+    }
+
     // Finds the edges in the cycle. O(V).
     set<int> findCycle(int edge, int* indexes) {
         set<int> cycle;
@@ -208,16 +225,28 @@ private:
 struct TreePath {
     int* tree;
     int g = 0;
-    float h = 0;
-    TreePath(int* tree, int g, float h) {
+    int h = 0;
+    TreePath(int* tree, int g, int h) {
         this->tree = tree; this->g = g; this->h = h;
     }
 };
 
-struct comp {
+struct Smallest {
     inline bool operator()(const TreePath& left, const TreePath& right) {
-        return left.g + left.h > right.g + right.h;
+        int fl = left.g + left.h;
+        int fr = right.g + right.h;
+        if (fl == fr)
+            return left.h > right.h;
+        return fl > fr;
     }
 };
 
-typedef priority_queue<TreePath, vector<TreePath>, comp> queue;
+struct Greatest {
+    inline bool operator()(const TreePath& left, const TreePath& right) {
+        int fl = left.g + left.h;
+        int fr = right.g + right.h;
+        if (fl == fr)
+            return left.g < right.g;
+        return fl < fr;
+    }
+};

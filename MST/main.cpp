@@ -37,12 +37,21 @@ void runSearch(Graph& graph, Result& result) {
 	delete[] tree;
 }
 
+int getOptimal(Graph& graph) 	{
+	Graph copy(graph);
+	copy.sortByWeight();
+	return kruskal(copy);
+}
+
 void findPaths(Graph& graph, int i) {
-	graph.sortByWeight();
+	int optimal = getOptimal(graph);
 	int* tree = graph.initializeTree();
+	cout << (i + 1) << ": " << endl;
 	cout << "Initial cost: " << graph.treeCost(tree) << endl;
-	cout << "Minimal cost: " << kruskal(graph) << endl;
-	cout << (i + 1) << ": " << shortestPath(graph, tree) << endl;
+	cout << "Minimal cost: " << optimal << endl;
+	cout << "Shortest Path: " << shortestPath(graph, tree, optimal) << endl;
+	cout << "Longest Path: " << longestPath(graph, tree, optimal) << endl;
+	delete [] tree;
 }
 
 void test(int n, double p) {
