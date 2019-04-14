@@ -10,6 +10,8 @@
 	using std::set;
 #include <algorithm>
     using std::sort;
+#include <queue>
+    using std::priority_queue;
 
 #define Node set<int>
 
@@ -98,6 +100,14 @@ public:
         return tree;
     }
 
+    // indexes[i] = k means that edge i is the k-th edge in the tree. k = -1 if not in the tree.
+    inline void initializeIndexes(int* tree, int* indexes) {
+        for (int i = 0; i < (int) edges.size(); i++)
+            indexes[i] = -1;
+        for (int i = 0; i < n - 1; i++)
+            indexes[tree[i]] = i;
+    }
+
 	// Calculates total cost of tree.
     inline int treeCost(int* tree) {
         int c = 0;
@@ -105,6 +115,25 @@ public:
             c += edges[tree[i]].weight;
         }
         return c;
+    }
+
+    int heaviestEdge() {
+        int heaviest = 0;
+        for (uint i = 0; i < edges.size(); i++) {
+            if (edges[i].weight > heaviest)
+                heaviest = edges[i].weight;
+        }
+        return heaviest;
+    }
+
+    // Finds the edges in the cycle. O(V).
+    set<int> findCycle(int edge, int* indexes) {
+        set<int> cycle;
+        int start = edges[edge].dest;
+        int goal = edges[edge].orig;
+        // Insert cycle edges
+        findCycle(start, goal, goal, indexes, cycle);
+        return cycle;
     }
 
 	// Prints each node's neighbors;
@@ -159,4 +188,36 @@ private:
         return true;
     }
 
+    // Auxiliary function.
+    bool findCycle(int current, int parent, int goal, int* indexes, set<int>& cycle) {
+        for (auto it = nodes[current].begin(); it != nodes[current].end(); ++it) {
+            int e = *it; // Neighbor edge
+            if (indexes[e] == -1) continue; // Ignore if not in the tree
+            int v = edges[e].neighbor(current);
+            if (v == parent) continue; // Ignore if current node came from this edge
+            if (v == goal || findCycle(v, current, goal, indexes, cycle)) {
+                cycle.insert(e);
+                return true;
+            }
+        }
+        return false;
+    }
+
 };
+
+struct TreePath {
+    int* tree;
+    int g = 0;
+    float h = 0;
+    TreePath(int* tree, int g, float h) {
+        this->tree = tree; this->g = g; this->h = h;
+    }
+};
+
+struct comp {
+    inline bool operator()(const TreePath& left, const TreePath& right) {
+        return left.g + left.h > right.g + right.h;
+    }
+};
+
+typedef priority_queue<TreePath, vector<TreePath>, comp> queue;
