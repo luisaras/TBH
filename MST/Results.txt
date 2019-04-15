@@ -1,0 +1,35 @@
+n = 100, p = 0.1
+First Improvement: 251.4 ms, 300.2 iterations.
+Best Improvement: 353 ms, 77.8 iterations.
+
+n = 100, p = 0.2
+First Improvement: 1306 ms, 393.7 iterations.
+Best Improvement: 1582.9 ms, 87.8 iterations.
+
+n = 100, p = 0.3
+First Improvement: 3220.8 ms, 423.7 iterations.
+Best Improvement: 3880.6 ms, 91.6 iterations.
+
+n = 250, p = 0.05
+First Improvement: 8263.6 ms, 963.1 iterations.
+Best Improvement: 10769.5 ms, 210.2 iterations.
+
+n = 250, p = 0.1
+First Improvement: 41693.5 ms, 1173.7 iterations.
+Best Improvement: 47986.8 ms, 229 iterations.
+
+n = 250, p = 0.2
+First Improvement: 184971 ms, 1306.9 iterations.
+Best Improvement: 200209 ms, 237.3 iterations.
+
+n = 500, p = 0.05
+First Improvement: 376295 ms, 2432.7 iterations.
+Best Improvement: 441635 ms, 457.7 iterations.
+
+n = 500, p = 0.1
+First Improvement: 1.6532e+06 ms, 2802.5 iterations.
+Best Improvement: 1.81522e+06 ms, 476.2 iterations.
+
+n = 500, p = 0.2
+First Improvement: 8.52494e+06 ms, 2599 iterations.
+Best Improvement: 9.59449e+06 ms, 484 iterations.
