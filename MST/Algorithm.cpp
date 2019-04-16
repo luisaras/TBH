@@ -1,6 +1,4 @@
 #include "Graph.cpp"
-#include <queue>
-    using std::priority_queue;
 
 // Modifies the given tree of the first variation that shows improvement.
 inline bool firstImprovement(Graph& graph, int* tree, int* indexes) {
@@ -60,8 +58,8 @@ inline int findSet(int* sets, int i) {
     return i;
 }
 
+// Must be sorted by weight.
 void kruskal(Graph& graph, int* tree) {
-    graph.sortByWeight();
     int sets[graph.n];
     for (int i = 0; i < graph.n; i++)
         sets[i] = i;
@@ -84,55 +82,5 @@ int kruskal(Graph& graph) {
     return graph.treeCost(tree);
 }
 
-template <class comp>
-inline int astar(Graph& graph, int* init, int optimal, int h) {
-    priority_queue<TreePath, vector<TreePath>, comp> open;
-    int E = graph.edges.size();
-    int indexes[E];
-    open.push(TreePath(new int[E], 0, graph.treeCost(init) - optimal));
-    for (int i = 0; i < E; i++) {
-        open.top().tree[i] = init[i];
-    }
-    while (!open.empty()) {
-        TreePath current = open.top();
-        if (current.h == 0) {
-                while (!open.empty()) {
-                    delete open.top().tree;
-                open.pop();
-            }
-            return current.g / h;
-        }
-        bool isFinal = true;
-        open.pop();
-        graph.initializeIndexes(current.tree, indexes);
-        int cost = graph.treeCost(current.tree);
-        for (int a = 0; a < E; a++) { // Search for an edge to add
-            if (indexes[a] >= 0) // Ignore if edge is already in the tree
-                continue;
-            int addedCost = graph.edges[a].weight; // Cost of edge to insert
-            set<int> cycle = graph.findCycle(a, indexes); // Edges in the cycle closed by the new edge
-            for (int r : cycle) { // Search for an edge to remove
-                int removedCost = graph.edges[r].weight; // Cost of edge to remove
-                if (removedCost > addedCost) { // If there is improvement
-                    // Store best replacement
-                    int* child = new int[E];
-                    for (int e = 0; e < E; e++)
-                        child[e] = current.tree[e];
-                    child[indexes[r]] = a;
-                    int ccost = cost + addedCost - removedCost;
-                    open.push(TreePath(child, current.g + h, ccost - optimal));
-                }
-            }
-        }
-        delete [] current.tree;
-    }
-    return -1;
-}
-
-int longestPath(Graph& graph, int* init, int optimal) {
-    return astar<Greatest>(graph, init, optimal, graph.lightestEdge());
-}
-
-int shortestPath(Graph& graph, int* init, int optimal) {
-    return astar<Smallest>(graph, init, optimal, graph.heaviestEdge());
-}
+//#include "AStar.cpp"
+#include "DFS.cpp"

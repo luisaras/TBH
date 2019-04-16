@@ -71,6 +71,10 @@ void test(int n, double p) {
     cout << endl;
 }
 
+void createDummy(int n, double p) {
+	Graph graph(n, p);
+}
+
 int main() {
     srand(0);
 //    test(8, 0.1);
@@ -85,6 +89,8 @@ int main() {
 
 	//test(500, 0.05);
 	//test(500, 0.1);
+	createDummy(500, 0.2);
+	test(500, 0.2);
 	test(500, 0.2);
 
     return 0;

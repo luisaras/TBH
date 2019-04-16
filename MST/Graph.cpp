@@ -221,32 +221,3 @@ private:
     }
 
 };
-
-struct TreePath {
-    int* tree;
-    int g = 0;
-    int h = 0;
-    TreePath(int* tree, int g, int h) {
-        this->tree = tree; this->g = g; this->h = h;
-    }
-};
-
-struct Smallest {
-    inline bool operator()(const TreePath& left, const TreePath& right) {
-        int fl = left.g + left.h;
-        int fr = right.g + right.h;
-        if (fl == fr)
-            return left.h > right.h;
-        return fl > fr;
-    }
-};
-
-struct Greatest {
-    inline bool operator()(const TreePath& left, const TreePath& right) {
-        int fl = left.g + left.h;
-        int fr = right.g + right.h;
-        if (fl == fr)
-            return left.g < right.g;
-        return fl < fr;
-    }
-};
