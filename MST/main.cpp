@@ -22,18 +22,26 @@ void runSearch(Graph& graph, Result& result) {
 	tree = graph.initializeTree();
 	graph.initializeIndexes(tree, indexes);
 	t1 = high_resolution_clock::now();
-	while(firstImprovement(graph, tree, indexes)) result.first_its++;
+	for(int i = 0; firstImprovement(graph, tree, indexes); i++)  {
+		result.first_its++;
+		if (i%100 == 0) cout << i << endl;
+	}
 	t2 = high_resolution_clock::now();
 	result.first_time += duration_cast<milliseconds>( t2 - t1 ).count();
+	cout << "First:" << result.first_time << "ms, " << result.first_its << endl;
 	delete[] tree;
 
 	// Best improvement
 	tree = graph.initializeTree();
 	graph.initializeIndexes(tree, indexes);
 	t1 = high_resolution_clock::now();
-	while(bestImprovement(graph, tree, indexes)) result.best_its++;
+	for(int i = 0; bestImprovement(graph, tree, indexes); i++) {
+		result.best_its++;
+		if (i%100 == 0) cout << i << endl;
+	}
 	t2 = high_resolution_clock::now();
 	result.best_time += duration_cast<milliseconds>( t2 - t1 ).count();
+	cout << "Best:" << result.best_time << "ms, " << result.best_its << endl;
 	delete[] tree;
 }
 
@@ -89,6 +97,7 @@ int main() {
 
 	//test(500, 0.05);
 	//test(500, 0.1);
+	createDummy(500, 0.2);
 	createDummy(500, 0.2);
 	test(500, 0.2);
 	test(500, 0.2);
