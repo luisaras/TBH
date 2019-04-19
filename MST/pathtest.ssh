@@ -1,81 +1,9 @@
 ulimit -v 3000000
+ulimit -t 800
 
-./main path1 10 0.1 0 >> output.txt
-./main path1 20 0.1 0 >> output.txt
-./main path1 21 0.1 0 >> output.txt
 ./main path1 21 0.2 0 >> output.txt
-./main path1 10 0.1 0 >> output.txt
-./main path1 20 0.1 0 >> output.txt
-./main path1 21 0.1 0 >> output.txt
-./main path1 21 0.2 0 >> output.txt
-
-./main path2 10 0.1 0 >> output.txt
-./main path2 20 0.1 0 >> output.txt
-./main path2 21 0.1 0 >> output.txt
-./main path2 21 0.2 0 >> output.txt
-./main path2 10 0.1 0 >> output.txt
-./main path2 20 0.1 0 >> output.txt
-./main path2 21 0.1 0 >> output.txt
 ./main path2 21 0.2 0 >> output.txt
 
-./main path3 10 0.1 0 >> output.txt
-./main path3 20 0.1 0 >> output.txt
-./main path3 21 0.1 0 >> output.txt
-./main path3 21 0.2 0 >> output.txt
-./main path3 10 0.1 0 >> output.txt
-./main path3 20 0.1 0 >> output.txt
-./main path3 21 0.1 0 >> output.txt
-./main path3 21 0.2 0 >> output.txt
-
-./main path4 10 0.1 0 >> output.txt
-./main path4 20 0.1 0 >> output.txt
-./main path4 21 0.1 0 >> output.txt
-./main path4 21 0.2 0 >> output.txt
-./main path4 10 0.1 0 >> output.txt
-./main path4 20 0.1 0 >> output.txt
-./main path4 21 0.1 0 >> output.txt
-./main path4 21 0.2 0 >> output.txt
-
-./main path1 10 0.1 100 >> output.txt
-./main path1 20 0.1 100 >> output.txt
-./main path1 21 0.1 100 >> output.txt
-./main path1 21 0.2 100 >> output.txt
-./main path1 10 0.1 100 >> output.txt
-./main path1 20 0.1 100 >> output.txt
-./main path1 21 0.1 100 >> output.txt
-./main path1 21 0.2 100 >> output.txt
-
-./main path2 10 0.1 100 >> output.txt
-./main path2 20 0.1 100 >> output.txt
-./main path2 21 0.1 100 >> output.txt
-./main path2 21 0.2 100 >> output.txt
-./main path2 10 0.1 100 >> output.txt
-./main path2 20 0.1 100 >> output.txt
-./main path2 21 0.1 100 >> output.txt
-./main path2 21 0.2 100 >> output.txt
-
-./main path3 10 0.1 100 >> output.txt
-./main path3 20 0.1 100 >> output.txt
-./main path3 21 0.1 100 >> output.txt
-./main path3 21 0.2 100 >> output.txt
-./main path3 10 0.1 100 >> output.txt
-./main path3 20 0.1 100 >> output.txt
-./main path3 21 0.1 100 >> output.txt
-./main path3 21 0.2 100 >> output.txt
-
-./main path4 10 0.1 100 >> output.txt
-./main path4 20 0.1 100 >> output.txt
-./main path4 21 0.1 100 >> output.txt
-./main path4 21 0.2 100 >> output.txt
-./main path4 10 0.1 100 >> output.txt
-./main path4 20 0.1 100 >> output.txt
-./main path4 21 0.1 100 >> output.txt
-./main path4 21 0.2 100 >> output.txt
-
-./main path1 10 0.1 1000 >> output.txt
-./main path1 20 0.1 1000 >> output.txt
-./main path1 21 0.1 1000 >> output.txt
-./main path1 21 0.2 1000 >> output.txt
 ./main path1 10 0.1 1000 >> output.txt
 ./main path1 20 0.1 1000 >> output.txt
 ./main path1 21 0.1 1000 >> output.txt
@@ -85,24 +13,12 @@ ulimit -v 3000000
 ./main path2 20 0.1 1000 >> output.txt
 ./main path2 21 0.1 1000 >> output.txt
 ./main path2 21 0.2 1000 >> output.txt
-./main path2 10 0.1 1000 >> output.txt
-./main path2 20 0.1 1000 >> output.txt
-./main path2 21 0.1 1000 >> output.txt
-./main path2 21 0.2 1000 >> output.txt
 
 ./main path3 10 0.1 1000 >> output.txt
 ./main path3 20 0.1 1000 >> output.txt
 ./main path3 21 0.1 1000 >> output.txt
 ./main path3 21 0.2 1000 >> output.txt
-./main path3 10 0.1 1000 >> output.txt
-./main path3 20 0.1 1000 >> output.txt
-./main path3 21 0.1 1000 >> output.txt
-./main path3 21 0.2 1000 >> output.txt
 
-./main path4 10 0.1 1000 >> output.txt
-./main path4 20 0.1 1000 >> output.txt
-./main path4 21 0.1 1000 >> output.txt
-./main path4 21 0.2 1000 >> output.txt
 ./main path4 10 0.1 1000 >> output.txt
 ./main path4 20 0.1 1000 >> output.txt
 ./main path4 21 0.1 1000 >> output.txt

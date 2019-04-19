@@ -1,15 +1,66 @@
-n = 10, p = 0.1
-Initial cost: 545
-Minimal cost: 458
-Shortest Path (A*): 1 in 0ms
-n = 20, p = 0.1
-Initial cost: 1068
-Minimal cost: 953
-Shortest Path (A*): 2 in 0ms
-n = 21, p = 0.1
-Initial cost: 964
-Minimal cost: 821
-Shortest Path (A*): 3 in 1ms
 n = 21, p = 0.2
 Initial cost: 904
 Minimal cost: 542
+n = 21, p = 0.2
+Initial cost: 904
+Minimal cost: 542
+n = 10, p = 0.1
+Initial cost: 503
+Minimal cost: 411
+Shortest Path (A*): 1 in 0ms
+n = 20, p = 0.1
+Initial cost: 925
+Minimal cost: 804
+Shortest Path (A*): 3 in 0ms
+n = 21, p = 0.1
+Initial cost: 853
+Minimal cost: 735
+Shortest Path (A*): 3 in 0ms
+n = 21, p = 0.2
+Initial cost: 592
+Minimal cost: 286
+n = 10, p = 0.1
+Initial cost: 503
+Minimal cost: 411
+Shortest Path (DFS): 1 in 0ms
+n = 20, p = 0.1
+Initial cost: 925
+Minimal cost: 804
+Shortest Path (DFS): 3 in 29222ms
+n = 21, p = 0.1
+Initial cost: 853
+Minimal cost: 735
+Shortest Path (DFS): 3 in 109575ms
+n = 21, p = 0.2
+Initial cost: 592
+Minimal cost: 286
+n = 10, p = 0.1
+Initial cost: 503
+Minimal cost: 411
+Longest Path (A*): 2 in 0ms
+n = 20, p = 0.1
+Initial cost: 925
+Minimal cost: 804
+Longest Path (A*): 19 in 14169ms
+n = 21, p = 0.1
+Initial cost: 853
+Minimal cost: 735
+Longest Path (A*): 22 in 67335ms
+n = 21, p = 0.2
+Initial cost: 592
+Minimal cost: 286
+n = 10, p = 0.1
+Initial cost: 503
+Minimal cost: 411
+Longest Path (DFS): 2 in 0ms
+n = 20, p = 0.1
+Initial cost: 925
+Minimal cost: 804
+Longest Path (DFS): 19 in 27153ms
+n = 21, p = 0.1
+Initial cost: 853
+Minimal cost: 735
+Longest Path (DFS): 22 in 104548ms
+n = 21, p = 0.2
+Initial cost: 592
+Minimal cost: 286

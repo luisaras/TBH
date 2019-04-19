@@ -1,0 +1,143 @@
+ == Shortest Path A* 1
+n = 10, p = 0.1
+Initial cost: 545
+Minimal cost: 458
+1 in 0ms
+n = 20, p = 0.1
+Initial cost: 1068
+Minimal cost: 953
+2 in 0ms
+n = 21, p = 0.1
+Initial cost: 964
+Minimal cost: 821
+3 in 0ms
+n = 21, p = 0.2
+Initial cost: 904
+Minimal cost: 542
+Memory fault.
+
+ == Shortest Path DFS 1
+n = 10, p = 0.1
+Initial cost: 545
+Minimal cost: 458
+1 in 0ms
+n = 20, p = 0.1
+Initial cost: 1068
+Minimal cost: 953
+2 in 0ms
+n = 21, p = 0.1
+Initial cost: 964
+Minimal cost: 821
+3 in 20606ms
+n = 21, p = 0.2
+Initial cost: 904
+Minimal cost: 542
+?
+
+ == Longest Path A* 1
+n = 10, p = 0.1
+Initial cost: 545
+Minimal cost: 458
+2 in 0ms
+n = 20, p = 0.1
+Initial cost: 1068
+Minimal cost: 953
+5 in 0ms
+n = 21, p = 0.1
+Initial cost: 964
+Minimal cost: 821
+20 in 15290ms
+n = 21, p = 0.2
+Initial cost: 904
+Minimal cost: 542
+Memory fault.
+
+ == Longest Path DFS 1
+n = 10, p = 0.1
+Initial cost: 545
+Minimal cost: 458
+2 in 0ms
+n = 20, p = 0.1
+Initial cost: 1068
+Minimal cost: 953
+5 in 0ms
+n = 21, p = 0.1
+Initial cost: 964
+Minimal cost: 821
+20 in 20628ms
+n = 21, p = 0.2
+Initial cost: 904
+Minimal cost: 542
+Time out.
+
+ == Shortest Path A* 2
+n = 10, p = 0.1
+Initial cost: 540
+Minimal cost: 455
+3 in 0ms
+n = 20, p = 0.1
+Initial cost: 1251
+Minimal cost: 1017
+4 in 3ms
+n = 21, p = 0.1
+Initial cost: 1133
+Minimal cost: 1055
+2 in 0ms
+n = 21, p = 0.2
+Initial cost: 985
+Minimal cost: 517
+Memory fault.
+
+ == Shortest Path DFS 2
+n = 10, p = 0.1
+Initial cost: 540
+Minimal cost: 455
+3 in 0ms
+n = 20, p = 0.1
+Initial cost: 1251
+Minimal cost: 1017
+Time out.
+n = 21, p = 0.1
+Initial cost: 1133
+Minimal cost: 1055
+2 in 195ms
+n = 21, p = 0.2
+Initial cost: 985
+Minimal cost: 517
+Time out.
+
+== Longest Path A* 2
+n = 10, p = 0.1
+Initial cost: 540
+Minimal cost: 455
+5 in 0ms
+n = 20, p = 0.1
+Initial cost: 1251
+Minimal cost: 1017
+Memory fault.
+n = 21, p = 0.1
+Initial cost: 1133
+Minimal cost: 1055
+11 in 177ms
+n = 21, p = 0.2
+Initial cost: 985
+Minimal cost: 517
+Memory fault.
+
+ == Longest Path DFS 2
+n = 10, p = 0.1
+Initial cost: 540
+Minimal cost: 455
+5 in 0ms
+n = 20, p = 0.1
+Initial cost: 1251
+Minimal cost: 1017
+Time out.
+n = 21, p = 0.1
+Initial cost: 1133
+Minimal cost: 1055
+11 in 187ms
+n = 21, p = 0.2
+Initial cost: 985
+Minimal cost: 517
+Time out.
