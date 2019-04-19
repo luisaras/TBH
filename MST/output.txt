@@ -1,0 +1,15 @@
+n = 10, p = 0.1
+Initial cost: 545
+Minimal cost: 458
+Shortest Path (A*): 1 in 0ms
+n = 20, p = 0.1
+Initial cost: 1068
+Minimal cost: 953
+Shortest Path (A*): 2 in 0ms
+n = 21, p = 0.1
+Initial cost: 964
+Minimal cost: 821
+Shortest Path (A*): 3 in 1ms
+n = 21, p = 0.2
+Initial cost: 904
+Minimal cost: 542

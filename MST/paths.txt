@@ -1,3 +1,5 @@
+====================== Seed = 0 ======================
+
 n = 10, p = 0.1
 Initial cost: 545
 Minimal cost: 458
@@ -28,3 +30,55 @@ Minimal cost: 542
 terminate called after throwing an instance of 'std::bad_alloc'
   what():  std::bad_alloc
 Aborted (core dumped)
+
+====================== Seed = 100 ======================
+
+n = 10, p = 0.1
+Initial cost: 540
+Minimal cost: 455
+Shortest Path (A*): 3 in 0ms
+Shortest Path (DFS): 3 in 0ms
+Longest Path (A*): 5 in 0ms
+Longest Path (DFS): 5 in 0ms
+
+n = 20, p = 0.1
+Initial cost: 1251
+Minimal cost: 1017
+Shortest Path (A*): 4 in 10ms
+
+
+
+
+n = 21, p = 0.1
+Initial cost: 1133
+Minimal cost: 1055
+Shortest Path (A*): 2 in 0ms
+Shortest Path (DFS): 2 in 284ms
+Longest Path (A*): 11 in 266ms
+Longest Path (DFS): 11 in 272ms
+
+====================== Seed = 1000 ======================
+
+n = 10, p = 0.1
+Initial cost: 503
+Minimal cost: 411
+Shortest Path (A*): 1 in 0ms
+Shortest Path (DFS): 1 in 0ms
+Longest Path (A*): 2 in 0ms
+Longest Path (DFS): 2 in 0ms
+
+n = 20, p = 0.1
+Initial cost: 925
+Minimal cost: 804
+Shortest Path (A*): 3 in 0ms
+Shortest Path (DFS): 3 in 46174ms
+Longest Path (A*): 19 in 21249ms
+Longest Path (DFS): 19 in 40768ms
+
+n = 21, p = 0.1
+Initial cost: 853
+Minimal cost: 735
+Shortest Path (A*): 3 in 0ms
+Shortest Path (DFS): 3 in 173416ms
+
+
