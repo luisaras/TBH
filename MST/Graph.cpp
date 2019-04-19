@@ -42,6 +42,11 @@ public:
         edges = copy.edges;
     }
 
+    Graph(int n) {
+        nodes = new Node[n];
+        this->n = n;
+    }
+
 	// Creates a random graph with n nodes and edges with probability p.
     Graph(int n, double p) {
         nodes = new Node[n];
@@ -52,9 +57,7 @@ public:
                 for (int j = i + 1; j < n; j++) {
                     if (p > rand() * 1.0 / RAND_MAX) {
                         int w = rand() % 100 + 1;
-                        nodes[i].insert(edges.size());
-                        nodes[j].insert(edges.size());
-                        edges.push_back(Edge(w, i, j));
+                        addEdge(i, j, w);
                     }
                 }
             }
@@ -66,6 +69,12 @@ public:
                 edges.clear();
             }
         }
+    }
+
+    inline void addEdge(int i, int j, int w) {
+        nodes[i].insert(edges.size());
+        nodes[j].insert(edges.size());
+        edges.push_back(Edge(w, i, j));
     }
 
 	// Sorts edges by weight.
@@ -125,22 +134,37 @@ public:
         return c;
     }
 
-    int heaviestEdge() {
-        int heaviest = 0;
-        for (uint i = 0; i < edges.size(); i++) {
-            if (edges[i].weight > heaviest)
-                heaviest = edges[i].weight;
+    inline int* copyTree(int* tree) {
+        int* copy = new int[n-1];
+        for (int i = 0; i < n - 1; i++) {
+            copy[i] = tree[i];
         }
-        return heaviest;
+        return copy;
     }
 
-    int lightestEdge() {
+    int greatestExchange() {
+        int heaviest = 0;
         int lightest = INT_MAX;
-        for (uint i = 0; i < edges.size(); i++) {
-            if (edges[i].weight < lightest)
-                lightest = edges[i].weight;
+        for (Edge e : edges) {
+            if (e.weight > heaviest)
+                heaviest = e.weight;
+            else if (e.weight < lightest)
+                lightest = e.weight;
         }
-        return lightest;
+        return heaviest - lightest;
+    }
+
+    int leastExchange() {
+        vector<Edge> edges(this->edges);
+        sort(edges.begin(), edges.end(), compareEdges);
+        int last = edges.size()-1;
+        int worst = edges[last].weight - edges[0].weight;
+        for (int e = 0; e < last; e++) {
+            int diff = edges[e+1].weight - edges[e].weight;
+            if (diff != 0 && diff < worst)
+                worst = diff;
+        }
+        return worst;
     }
 
     // Finds the edges in the cycle. O(V).

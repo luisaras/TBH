@@ -1,0 +1,30 @@
+n = 10, p = 0.1
+Initial cost: 545
+Minimal cost: 458
+Shortest Path (A*): 1 in 0ms
+Shortest Path (DFS): 1 in 0ms
+Longest Path (A*): 2 in 0ms
+Longest Path (DFS): 2 in 0ms
+
+n = 20, p = 0.1
+Initial cost: 1068
+Minimal cost: 953
+Shortest Path (A*): 2 in 0ms
+Shortest Path (DFS): 2 in 0ms
+Longest Path (A*): 5 in 0ms
+Longest Path (DFS): 5 in 0ms
+
+n = 21, p = 0.1
+Initial cost: 964
+Minimal cost: 821
+Shortest Path (A*): 3 in 1ms
+Shortest Path (DFS): 3 in 33407ms
+Longest Path (A*): 20 in 23359ms
+Longest Path (DFS): 20 in 33424ms
+
+n = 21, p = 0.2
+Initial cost: 904
+Minimal cost: 542
+terminate called after throwing an instance of 'std::bad_alloc'
+  what():  std::bad_alloc
+Aborted (core dumped)

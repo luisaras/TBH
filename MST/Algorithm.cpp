@@ -82,5 +82,5 @@ int kruskal(Graph& graph) {
     return graph.treeCost(tree);
 }
 
-//#include "AStar.cpp"
+#include "AStar.cpp"
 #include "DFS.cpp"

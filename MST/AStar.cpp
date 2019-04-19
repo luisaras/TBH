@@ -1,17 +1,17 @@
 #include <queue>
     using std::priority_queue;
 
-struct TreePath {
+struct AStarPath {
     int* tree;
     int g = 0;
     int h = 0;
-    TreePath(int* tree, int g, int h) {
+    AStarPath(int* tree, int g, int h) {
         this->tree = tree; this->g = g; this->h = h;
     }
 };
 
 struct Smallest {
-    inline bool operator()(const TreePath& left, const TreePath& right) {
+    inline bool operator()(const AStarPath& left, const AStarPath& right) {
         int fl = left.g + left.h;
         int fr = right.g + right.h;
         if (fl == fr)
@@ -21,7 +21,7 @@ struct Smallest {
 };
 
 struct Greatest {
-    inline bool operator()(const TreePath& left, const TreePath& right) {
+    inline bool operator()(const AStarPath& left, const AStarPath& right) {
         int fl = left.g + left.h;
         int fr = right.g + right.h;
         if (fl == fr)
@@ -32,15 +32,12 @@ struct Greatest {
 
 template <class comp>
 inline int astar(Graph& graph, int* init, int optimal, int h) {
-    priority_queue<TreePath, vector<TreePath>, comp> open;
+    priority_queue<AStarPath, vector<AStarPath>, comp> open;
     int E = graph.edges.size();
     int indexes[E];
-    open.push(TreePath(new int[E], 0, graph.treeCost(init) - optimal));
-    for (int i = 0; i < E; i++) {
-        open.top().tree[i] = init[i];
-    }
+    open.push(AStarPath(init, 0, graph.treeCost(init) - optimal));
     while (!open.empty()) {
-        TreePath current = open.top();
+        AStarPath current = open.top();
         int cost = graph.treeCost(current.tree);
         if (cost == optimal) {
                 while (!open.empty()) {
@@ -60,12 +57,10 @@ inline int astar(Graph& graph, int* init, int optimal, int h) {
                 int removedCost = graph.edges[r].weight; // Cost of edge to remove
                 if (removedCost > addedCost) { 
                     // If there is improvement
-                    int* child = new int[E];
-                    for (int e = 0; e < E; e++)
-                        child[e] = current.tree[e];
+                    int* child = graph.copyTree(current.tree);
                     child[indexes[r]] = a;
                     int ccost = cost + addedCost - removedCost;
-                    open.push(TreePath(child, current.g + h, ccost - optimal));
+                    open.push(AStarPath(child, current.g + h, ccost - optimal));
                 }
             }
         }
@@ -74,10 +69,10 @@ inline int astar(Graph& graph, int* init, int optimal, int h) {
     return -1;
 }
 
-int longestPath(Graph& graph, int* init, int optimal) {
-    return astar<Greatest>(graph, init, optimal, graph.lightestEdge());
+int astar_longestPath(Graph& graph, int* init, int optimal) {
+    return astar<Greatest>(graph, init, optimal, graph.leastExchange());
 }
 
-int shortestPath(Graph& graph, int* init, int optimal) {
-    return astar<Smallest>(graph, init, optimal, graph.heaviestEdge());
+int astar_shortestPath(Graph& graph, int* init, int optimal) {
+    return astar<Smallest>(graph, init, optimal, graph.greatestExchange());
 }
