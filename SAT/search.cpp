@@ -16,7 +16,7 @@ public:
         formula.copySolution(initSolution, solution);
         high_resolution_clock::time_point t1, t2;
         t1 = high_resolution_clock::now(); t2 = t1;
-        for (uint current = formula.evaluate(solution); i < formula.c; i++) {
+        for (uint current = formula.evaluate(solution); true; i++) {
             if (current == formula.c) {
                 best = current;
                 break;
@@ -27,16 +27,18 @@ public:
             }
             if (i >= period) {
                 formula.resetSolution(solution);
-                if (current > best)  { 
+                if (current > best)  {
                     best = current;
                 }
                 i = 0; retries++;
             }
             current = search(solution);
+            //cout << current << endl;
             t2 = high_resolution_clock::now();
         }
-        out << duration_cast<milliseconds>(t2 - t1).count() * 0.001f << '\t' << retries;
+        out << duration_cast<milliseconds>(t2 - t1).count() * 0.001f << '\t' << retries << '\t' << best;
     }
+    
 protected:
 
 	Formula& formula;
@@ -101,26 +103,44 @@ protected:
 
 class TabuGSAT : public Search {
 public:
-	TabuGSAT(Formula& f, uint p) : Search(f, p) {
+
+	TabuGSAT(Formula& f, uint dp) : Search(f, (uint) -1) {
 		tabu = new uint[f.v];
-		for (uint i = 0; i < f.v; i++) {
-			
-		}
+		for (uint i = 0; i < f.v; i++)
+			tabu[i] = 0;
+		// TODO: test intervals
+		dmin = 0;
+		dmax = f.v;
+		// d-Period
+		this->dp = dp;
+		dcount = 0;
+		d = newd();
 	}
 	
 	~TabuGSAT() { delete [] tabu; }
 	
 protected:
 
+	uint dmin, dmax, d, dp, dcount;
 	uint* tabu;
+	
+	inline uint newd() {
+		return rand() % (dmax - dmin + 1) + dmin;
+	}
 
     int search(bool* solution) {
+        if (dcount == dp) {
+			dcount = 0;
+			d = newd();
+		}
         uint best = -1;
         uint vbest = 0;
         uint eq = 1;
         for (uint i = 0; i < formula.v; i++) {
-			if (tabu[i] > 0)
+			if (tabu[i] > 0) {
+				tabu[i]--;
 				continue;
+			}
             uint vi = formula.testFlip(i, solution);
             if (vi > vbest) {
                 best = i; vbest = vi;
@@ -132,14 +152,12 @@ protected:
                 }
             }
         }
-        solution[best] = !solution[best];
+        dcount++;
+        if (best != (uint) -1) {
+			tabu[best] = d;
+			solution[best] = !solution[best];
+		}
         return vbest;
     }
 
 };
-
-// Constructive
-
-void greedy(Formula& formula, bool* solution) {
-    // TODO
-}

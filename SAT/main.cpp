@@ -6,7 +6,6 @@
 #define SAMPLES 15
 
 void test(string& formulaName, string& searchName, uint timeLimit) {
-	srand(0);
 
 	// Get formula
 	string formulaFile = formulaName + ".cnf";
@@ -15,6 +14,7 @@ void test(string& formulaName, string& searchName, uint timeLimit) {
 	// Run algorithm
     for(int i = 1; i <= SAMPLES; i++) {
 
+		srand(i * 100);
 	    bool initSolution[formula.v];
 	    formula.resetSolution(initSolution);
 
@@ -33,8 +33,7 @@ void test(string& formulaName, string& searchName, uint timeLimit) {
 			TabuGSAT s(formula, formula.v * 3);
 			s.test(cout, initSolution, timeLimit);
 		} else {
-			TabuGSAT s(formula, (uint) -1);
-			s.test(cout, initSolution, timeLimit);
+			cout << "Search not recognized: " << searchName << endl;
 		}
 		
     	cout << endl;
