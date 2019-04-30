@@ -1,17 +1,22 @@
+#include "formula.cpp"
+#include <ostream>
+    using std::ostream;
+#include <chrono>
+using namespace std::chrono;
 
 class Search {
-
 public:
 
-    void test(ostream& out, Formula& formula, bool* initSolution, 
-            int period, uint maxTime) {
+	Search (Formula& f, uint p) : formula(f), period(p) {}
 
-        int i = 0, best = 0, retries = 0;
+    virtual void test(ostream& out, bool* initSolution, uint maxTime) {
+
+        uint i = 0, best = 0, retries = 0;
         bool solution[formula.v];
         formula.copySolution(initSolution, solution);
         high_resolution_clock::time_point t1, t2;
         t1 = high_resolution_clock::now(); t2 = t1;
-        for (int current = formula.evaluate(solution); i < formula.c; i++) {
+        for (uint current = formula.evaluate(solution); i < formula.c; i++) {
             if (current == formula.c) {
                 best = current;
                 break;
@@ -27,20 +32,28 @@ public:
                 }
                 i = 0; retries++;
             }
-            current = search(formula, solution);
+            current = search(solution);
             t2 = high_resolution_clock::now();
         }
         out << duration_cast<milliseconds>(t2 - t1).count() * 0.001f << '\t' << retries;
     }
+protected:
 
+	Formula& formula;
+	uint period;
+	
+	virtual int search(bool* solution) = 0;
+	
 };
 
-
-class WalkSAT : Search {
+class WalkSAT : public Search {
 public:
+	WalkSAT(Formula& f, uint p) : Search(f, p) {}
+	
+protected:
 
-    int search(Formula& formula, bool* solution) {
-        vector<int> unsat = formula.unsatClauses(solution);
+    int search(bool* solution) {
+        vector<uint> unsat = formula.unsatClauses(solution);
         int c = rand() % unsat.size();
         Clause& clause = formula.clauses[unsat[c]];
         int best = 0;
@@ -57,18 +70,19 @@ public:
         return vbest;
     }
 
-    int search(bool* solution) = 0;
-
 };
 
-class GSAT : Search {
+class GSAT : public Search {
+public:
+	GSAT(Formula& f, uint p) : Search(f, p) {}
 
-    int search(Formula& formula, bool* solution) {
-        int best = 0;
-        int vbest = formula.testFlip(0, solution);
-        int eq = 1;
-        for (int i = 1; i < formula.v; i++) {
-            int vi = formula.testFlip(i, solution);
+protected:
+    int search(bool* solution) {
+        uint best = 0;
+        uint vbest = formula.testFlip(0, solution);
+        uint eq = 1;
+        for (uint i = 1; i < formula.v; i++) {
+            uint vi = formula.testFlip(i, solution);
             if (vi > vbest) {
                 best = i; vbest = vi;
                 eq = 1;
@@ -85,14 +99,29 @@ class GSAT : Search {
 
 };
 
-class TabuGSAT : Search {
+class TabuGSAT : public Search {
+public:
+	TabuGSAT(Formula& f, uint p) : Search(f, p) {
+		tabu = new uint[f.v];
+		for (uint i = 0; i < f.v; i++) {
+			
+		}
+	}
+	
+	~TabuGSAT() { delete [] tabu; }
+	
+protected:
 
-    int search(Formula& formula, bool* solution) {
-        int best = 0;
-        int vbest = formula.testFlip(0, solution);
-        int eq = 1;
-        for (int i = 1; i < formula.v; i++) {
-            int vi = formula.testFlip(i, solution);
+	uint* tabu;
+
+    int search(bool* solution) {
+        uint best = -1;
+        uint vbest = 0;
+        uint eq = 1;
+        for (uint i = 0; i < formula.v; i++) {
+			if (tabu[i] > 0)
+				continue;
+            uint vi = formula.testFlip(i, solution);
             if (vi > vbest) {
                 best = i; vbest = vi;
                 eq = 1;

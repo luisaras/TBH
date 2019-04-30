@@ -1,10 +1,21 @@
 #include <vector>
     using std::vector;
-
+#include <string>
+    using std::string;
+    using std::stoi;
+#include <iostream>
+    using std::cout;
+    using std::cin;
+    using std::endl;
+    using std::cerr;
+#include <fstream>
+    using std::ifstream;
+    using std::istream;
+    
 #define Clause vector<int>
 
 struct Formula {
-    int v, c;
+    uint v, c;
     Clause* clauses;
 
     Formula() {}
@@ -18,7 +29,7 @@ struct Formula {
 	        return;
 	    }
 	    string s;
-	    int currentClause;
+	    uint currentClause;
 	    while (stream >> s) {
 	        if (s == "c") {
 	            // Comments
@@ -45,9 +56,9 @@ struct Formula {
 	    stream.close();
 	}
 
-    int evaluate(bool* values) {
-        int e = 0;
-        for (int i = 0; i < c; i++) {
+    uint evaluate(bool* values) {
+        uint e = 0;
+        for (uint i = 0; i < c; i++) {
 			if (isSat(i, values)) {
 				e++;
 			}
@@ -70,16 +81,16 @@ struct Formula {
 		return false;
 	}
 
-    inline int testFlip(int i, bool* solution) {
+    inline uint testFlip(int i, bool* solution) {
         solution[i] = !solution[i];
         int e = evaluate(solution);
         solution[i] = !solution[i];
         return e;
     }
     
-    inline vector<int> unsatClauses(bool* solution) {
-		vector<int> s;
-		for (int i = 0; i < c; i++) {
+    inline vector<uint> unsatClauses(bool* solution) {
+		vector<uint> s;
+		for (uint i = 0; i < c; i++) {
 			if (!isSat(i, solution))
 				s.push_back(i);
 		}
@@ -87,17 +98,17 @@ struct Formula {
 	}
 
 	inline void resetSolution(bool* solution) {
-	    for (int i = 0; i < v; i++)
+	    for (uint i = 0; i < v; i++)
 	        solution[i] = rand() % 2;
 	}
 
 	inline void copySolution(bool* orig, bool* dest) {
-		for (int i = 0; i < v; i++)
+		for (uint i = 0; i < v; i++)
 			dest[i] = orig[i];
 	}
 	
 };
 
-inline int index(int var) {
+inline uint index(int var) {
 	return var < 0 ? -var - 1 : var - 1;
 }

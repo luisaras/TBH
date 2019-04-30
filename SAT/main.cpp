@@ -1,23 +1,9 @@
-#include <iostream>
-    using std::cout;
-    using std::cin;
-    using std::endl;
-    using std::cerr;
-#include <fstream>
-    using std::ifstream;
-    using std::istream;
-#include <ostream>
-    using std::ostream;
-#include <string>
-    using std::string;
-    using std::stoi;
-#include <chrono>
 #include <cstdlib>
 #include <ctime>
 #include <climits>
-#include "formula.cpp"
+
 #include "search.cpp"
-using namespace std::chrono;
+#define SAMPLES 15
 
 void test(string& formulaName, string& searchName, uint timeLimit) {
 	srand(0);
@@ -27,7 +13,7 @@ void test(string& formulaName, string& searchName, uint timeLimit) {
 	Formula formula(formulaFile);
 	
 	// Run algorithm
-    for(int i = 1; i <= 15; i++) {
+    for(int i = 1; i <= SAMPLES; i++) {
 
 	    bool initSolution[formula.v];
 	    formula.resetSolution(initSolution);
@@ -37,18 +23,18 @@ void test(string& formulaName, string& searchName, uint timeLimit) {
     		 << i << '\t';
 
     	// Get search algorithm
-	    if (searchName == 0) {
-	    	GSAT s;
-	    	s.test(cout, formula, initSolution, formula.v * 3, timeLimit);
-	    } else if (search == "walksat") { 
-		    WalkSat s;
-		    s.test(cout, formula, initSolution, formula.v * 3, timeLimit);
-		} else if (search == "tabu") {
-			TabuGSAT s;
-			s.test(cout, formula, initSolution, formula.v * 3, timeLimit);
+	    if (searchName == "gsat") {
+	    	GSAT s(formula, formula.v * 3);
+	    	s.test(cout, initSolution, timeLimit);
+	    } else if (searchName == "walksat") { 
+		    WalkSAT s(formula, formula.v * 3);
+		    s.test(cout, initSolution, timeLimit);
+		} else if (searchName == "tabu") {
+			TabuGSAT s(formula, formula.v * 3);
+			s.test(cout, initSolution, timeLimit);
 		} else {
-			TabuGSAT s;
-			s.test(cout, formula, initSolution, (uint) -1, timeLimit);
+			TabuGSAT s(formula, (uint) -1);
+			s.test(cout, initSolution, timeLimit);
 		}
 		
     	cout << endl;
@@ -58,7 +44,7 @@ void test(string& formulaName, string& searchName, uint timeLimit) {
 
 int main(int argc, char* argv[]) {
 	// minutes -> seconds -> milliseconds
-	int timeLimit = 20 * 60 * 1000;
+	//uint timeLimit = 20 * 60 * 1000;
 
 	string inst[] = { "flat50-1", "par8-5-c", "flat75-1", "flat100-1" };
 		
