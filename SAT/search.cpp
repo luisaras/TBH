@@ -104,18 +104,20 @@ protected:
 class TabuGSAT : public Search {
 public:
 
-	TabuGSAT(Formula& f, uint dp) : Search(f, (uint) -1) {
+	TabuGSAT(Formula& f, uint dp, uint dmin, uint dmax) : Search(f, (uint) -1) {
 		tabu = new uint[f.v];
 		for (uint i = 0; i < f.v; i++)
 			tabu[i] = 0;
 		// TODO: test intervals
-		dmin = 0;
-		dmax = f.v;
+		this->dmin = dmin;
+		this->dmax = dmax;
 		// d-Period
 		this->dp = dp;
 		dcount = 0;
 		d = newd();
 	}
+
+	TabuGSAT(Formula& f, uint dp) : TabuGSAT(f, dp, 0, f.v) { }
 	
 	~TabuGSAT() { delete [] tabu; }
 	
