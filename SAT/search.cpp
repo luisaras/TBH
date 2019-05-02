@@ -7,7 +7,9 @@ using namespace std::chrono;
 class Search {
 public:
 
-	Search (Formula& f, uint p) : formula(f), period(p) {}
+	Search (Formula& f, uint p) : formula(f), period(p) {
+		cout << p << endl;
+	}
 
     virtual void test(ostream& out, bool* initSolution, uint maxTime) {
 
@@ -108,7 +110,6 @@ public:
 		tabu = new uint[f.v];
 		for (uint i = 0; i < f.v; i++)
 			tabu[i] = 0;
-		// TODO: test intervals
 		this->dmin = dmin;
 		this->dmax = dmax;
 		// d-Period

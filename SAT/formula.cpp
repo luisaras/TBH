@@ -11,12 +11,21 @@
 #include <fstream>
     using std::ifstream;
     using std::istream;
+#include <set>
+	using std::set;
+	using std::pair;
     
 #define Clause vector<int>
+
+inline uint index(int var) {
+	return var < 0 ? -var - 1 : var - 1;
+}
 
 struct Formula {
     uint v, c;
     Clause* clauses;
+    
+    set<int>* varClauses;
 
     Formula() {}
     Formula(string& name) { read(name); }
@@ -40,6 +49,7 @@ struct Formula {
 	                   >> v // number of variables
 	                   >> c; // number of clauses
 	            clauses = new Clause[c];
+	            varClauses = new set<int>[v];
 	            currentClause = 0;
 	        } else if (s == "%") {
 	        	break;
@@ -49,6 +59,11 @@ struct Formula {
 	            int var;
 	            while (stream >> var && var != 0) {
 	                clauses[currentClause].push_back(var);
+	                if (var < 0) {
+						varClauses[-var - 1].insert(-currentClause - 1);
+					} else {
+						varClauses[var - 1].insert(currentClause + 1);
+					}
 	            }
 	            currentClause++;
 	        }
@@ -108,7 +123,3 @@ struct Formula {
 	}
 	
 };
-
-inline uint index(int var) {
-	return var < 0 ? -var - 1 : var - 1;
-}

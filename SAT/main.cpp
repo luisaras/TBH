@@ -61,7 +61,7 @@ void testTabu(string& formulaName, uint timeLimit, uint dmin, uint dmax, uint dp
     		 << i << '\t';
 
     	// Get search algorithm
-	    TabuGSAT s(formula, formula.v * 3);
+	    TabuGSAT s(formula, formula.v * 3, dmin, dmax);
 		s.test(cout, initSolution, timeLimit);
 		
     	cout << endl;
