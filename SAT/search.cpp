@@ -1,4 +1,4 @@
-#include "formula.cpp"
+#include "greedy.cpp"
 #include <ostream>
     using std::ostream;
 #include <chrono>
@@ -7,18 +7,18 @@ using namespace std::chrono;
 class Search {
 public:
 
-	Search (Formula& f, uint p) : formula(f), period(p) {
-		cout << p << endl;
-	}
+	Search (Formula& f, uint p) : formula(f), period(p) {}
 
     virtual void test(ostream& out, bool* initSolution, uint maxTime) {
 
         uint i = 0, best = 0, retries = 0;
         bool solution[formula.v];
-        formula.copySolution(initSolution, solution);
+
         high_resolution_clock::time_point t1, t2;
         t1 = high_resolution_clock::now(); t2 = t1;
-        for (uint current = formula.evaluate(solution); true; i++) {
+
+        initializeSolution(formula, initSolution, solution);
+        for (uint current = formula.evaluate(solution); true; i++, steps++) {
             if (current == formula.c) {
                 best = current;
                 break;
@@ -38,16 +38,21 @@ public:
             //cout << current << endl;
             t2 = high_resolution_clock::now();
         }
-        out << duration_cast<milliseconds>(t2 - t1).count() * 0.001f << '\t' << retries << '\t' << best;
+        out << duration_cast<milliseconds>(t2 - t1).count() * 0.001f << '\t' << retries;
     }
     
 protected:
 
 	Formula& formula;
 	uint period;
+    uint steps = 0;
 	
 	virtual int search(bool* solution) = 0;
 	
+    virtual void initializeSolution(Formula& formula, bool* initSolution, bool* solution) {
+        formula.copySolution(initSolution, solution);
+    }
+
 };
 
 class WalkSAT : public Search {
@@ -161,6 +166,23 @@ protected:
 			solution[best] = !solution[best];
 		}
         return vbest;
+    }
+
+};
+
+class GRASP : public GSAT {
+public:
+    GRASP(Formula& f, uint p, uint k) : GSAT(f, p) {
+        this->k = k;
+    }
+
+protected:
+
+    uint k; 
+
+    void initializeSolution(Formula& formula, bool* initSolution, bool* solution) {
+        greedy(formula, solution, k * 0.2);
+        steps += formula.v;
     }
 
 };

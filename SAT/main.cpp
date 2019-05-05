@@ -42,12 +42,11 @@ void test(string& formulaName, string& searchName, uint timeLimit) {
 }
 
 void testTabu(string& formulaName, uint timeLimit, uint dmin, uint dmax, uint dp) {
-	
 	// Get formula
 	string formulaFile = formulaName + ".cnf";
 	Formula formula(formulaFile);
 	
-	 bool initSolution[formula.v];
+	bool initSolution[formula.v];
 	// Run algorithm
     for(int i = 1; i <= SAMPLES; i++) {
 
@@ -66,29 +65,63 @@ void testTabu(string& formulaName, uint timeLimit, uint dmin, uint dmax, uint dp
 		
     	cout << endl;
 	}
+}
+
+void testGreedy(string& formulaName, uint k) {
+	// Get formula
+	string formulaFile = formulaName + ".cnf";
+	Formula formula(formulaFile);
+	bool initSolution[formula.v];
+
+    high_resolution_clock::time_point t1, t2;
 	
+	for (int i = 1; i <= 100; i++) {
+		cout << (k * 0.2) << '\t'
+			 << formulaName << '\t'
+			 << i << '\t';
+
+		t1 = high_resolution_clock::now();
+		uint result = greedy(formula, initSolution, k * 0.2);
+		t2 = high_resolution_clock::now();
+
+		cout << duration_cast<milliseconds>(t2 - t1).count() * 0.001f << '\t' << result << endl;
+	}
+
 }
 
 int main(int argc, char* argv[]) {
 	// minutes -> seconds -> milliseconds
 	uint timeLimit = 20 * 60 * 1000;
 	string inst[] = { "par8-5-c", "flat50-1", "flat75-1", "flat100-1" };
+
+	// Comparison tests
+	string gsat("gsat");
+	string walksat("walksat");
+	string tabu("tabu");
+	for (int i = 0; i < 4; i++) {
+		test(inst[i], gsat, timeLimit);
+		test(inst[i], walksat, timeLimit);
+		test(inst[i], tabu, timeLimit);
+	}
+
+/*
+	// Tabu D tests
 	uint v[] = { 75, 150, 225, 350 };
-		
 	for (int i = 0; i < 4; i++) {
 		testTabu(inst[i], timeLimit, 0, v[i], v[i] * 3);
 		testTabu(inst[i], timeLimit, 0, v[i] / 3, v[i] * 3);
 		testTabu(inst[i], timeLimit, v[i] / 3, v[i] * 2 / 3, v[i] * 3);
 		testTabu(inst[i], timeLimit, v[i] * 2 / 3, v[i], v[i] * 3);
 	}
-		
-	/*
+*/
+
+/*
 	string search(argv[1]);
 	string file(argv[2]);
 	uint timeLimit = atoi(argv[3]);
 
 	test(file, search, timeLimit);
-	*/
+*/
 	
     return 0;
 }
