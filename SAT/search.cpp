@@ -4,64 +4,85 @@
 #include <chrono>
 using namespace std::chrono;
 
+#define NONE 0
+#define STOP 1
+#define RESET 2
+
+#define BEST_ALPHA 0.8
+#define BEST_DMIN 0
+#define BEST_DMAX f.v
+
 class Search {
 public:
 
-	Search (Formula& f, uint p) : formula(f), period(p) {}
+    uint steps, retries, best;
+    long executionTime = 0;
 
-    virtual void test(ostream& out, bool* initSolution, uint maxTime) {
+	Search (Formula& f, uint period, short maxLocal = NONE) : formula(f) {
+        this->maxLocal = maxLocal;
+        this->period = period;
+    }
 
-        uint i = 0, best = 0, retries = 0;
+    virtual bool test(uint maxTime) {
+        // Stats
+        steps = 0; retries = 0; best = 0; executionTime = 0;
+
+        high_resolution_clock::time_point start = high_resolution_clock::now();
+
+        // Initial solution (random or greedy)
         bool solution[formula.v];
+        resetSolution(formula, solution);
+        uint last = 0, current = formula.evaluate(solution);
 
-        high_resolution_clock::time_point t1, t2;
-        t1 = high_resolution_clock::now(); t2 = t1;
-
-        initializeSolution(formula, initSolution, solution);
-        for (uint current = formula.evaluate(solution); true; i++, steps++) {
-            if (current == formula.c) {
+        for (uint i = 0; true; i++, steps++) {
+            // Check if global/local maximum is found
+            if (current == formula.c || (maxLocal == STOP && current == last)) {
                 best = current;
                 break;
             }
-            if (duration_cast<milliseconds>(t2 - t1).count() > maxTime) {
-                cout << "NA\tNA";
-                return;
+            // Check if time-out
+            if (executionTime > maxTime) {
+                return false;
             }
-            if (i >= period) {
-                formula.resetSolution(solution);
+            // Reset solution if reached max step count
+            if (i >= period || (maxLocal == RESET && current == last)) {
+                resetSolution(formula, solution);
                 if (current > best)  {
                     best = current;
                 }
                 i = 0; retries++;
             }
-            current = search(solution);
-            //cout << current << endl;
-            t2 = high_resolution_clock::now();
+            // Update solution
+            last = current;
+            current = step(solution);
+            executionTime = duration_cast<milliseconds>(high_resolution_clock::now() - start).count();
         }
-        out << duration_cast<milliseconds>(t2 - t1).count() * 0.001f << '\t' << steps;
+        
+        return true;
     }
     
 protected:
 
 	Formula& formula;
 	uint period;
-    uint steps = 0;
+    short maxLocal;
 	
-	virtual int search(bool* solution) = 0;
-	
-    virtual void initializeSolution(Formula& formula, bool* initSolution, bool* solution) {
-        formula.copySolution(initSolution, solution);
+	virtual int step(bool* solution) = 0;
+
+    virtual void resetSolution(Formula& formula, bool* solution) {
+        formula.resetSolution(solution);
     }
 
 };
 
 class WalkSAT : public Search {
 public:
-	WalkSAT(Formula& f, uint p) : Search(f, p) {}
+
+	WalkSAT(Formula& f, uint p, short maxLocal = NONE) : Search(f, p, maxLocal) {}
 	
 protected:
 
-    int search(bool* solution) {
+    int step(bool* solution) {
         vector<uint> unsat = formula.unsatClauses(solution);
         int c = rand() % unsat.size();
         Clause& clause = formula.clauses[unsat[c]];
@@ -83,10 +104,12 @@ protected:
 
 class GSAT : public Search {
 public:
-	GSAT(Formula& f, uint p) : Search(f, p) {}
+
+	GSAT(Formula& f, uint p, short maxLocal = NONE) : Search(f, p, maxLocal) {}
 
 protected:
-    int search(bool* solution) {
+
+    int step(bool* solution) {
         uint best = 0;
         uint vbest = formula.testFlip(0, solution);
         uint eq = 1;
@@ -111,7 +134,7 @@ protected:
 class TabuGSAT : public Search {
 public:
 
-	TabuGSAT(Formula& f, uint dp, uint dmin, uint dmax) : Search(f, (uint) -1) {
+	TabuGSAT(Formula& f, uint dp, uint dmin, uint dmax) : Search(f, (uint) -1, NONE) {
 		tabu = new uint[f.v];
 		for (uint i = 0; i < f.v; i++)
 			tabu[i] = 0;
@@ -123,7 +146,7 @@ public:
 		d = newd();
 	}
 
-	TabuGSAT(Formula& f, uint dp) : TabuGSAT(f, dp, 0, f.v) { }
+    TabuGSAT(Formula& f, uint dp) : TabuGSAT(f, dp, BEST_DMIN, BEST_DMAX) {}
 	
 	~TabuGSAT() { delete [] tabu; }
 	
@@ -136,7 +159,7 @@ protected:
 		return rand() % (dmax - dmin + 1) + dmin;
 	}
 
-    int search(bool* solution) {
+    int step(bool* solution) {
         if (dcount == dp) {
 			dcount = 0;
 			d = newd();
@@ -172,16 +195,17 @@ protected:
 
 class GRASP : public GSAT {
 public:
-    GRASP(Formula& f, uint p, uint k) : GSAT(f, p) {
-        this->k = k;
+
+    GRASP(Formula& formula, short maxLocal = NONE, double alpha = BEST_ALPHA) : GSAT(formula, (uint) -1, maxLocal) {
+        this->alpha = alpha;
     }
 
 protected:
 
-    uint k; 
+    double alpha;
 
-    void initializeSolution(Formula& formula, bool* initSolution, bool* solution) {
-        greedy(formula, solution, k * 0.2);
+    void resetSolution(Formula& formula, bool* solution) {
+        greedy(formula, solution, alpha);
         steps += formula.v;
     }
 

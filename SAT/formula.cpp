@@ -22,13 +22,19 @@ inline uint index(int var) {
 }
 
 struct Formula {
+	string name;
+
     uint v, c;
     Clause* clauses;
-    
     set<int>* varClauses;
 
-    Formula() {}
-    Formula(string& name) { read(name); }
+    Formula(string& name) { 
+    	this->name = name;
+    	string fileName = name + ".cnf";
+    	fileName = "instances/" + fileName;
+    	read(fileName); 
+   	}
+
     ~Formula() { delete [] clauses; }
 
 	void read(string& name) {
