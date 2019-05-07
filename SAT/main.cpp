@@ -89,20 +89,56 @@ void testGreedy(string& formulaName, uint k) {
 
 }
 
+void testGRASP(string& formulaName, uint timeLimit, uint k) {
+	// Get formula
+	string formulaFile = formulaName + ".cnf";
+	Formula formula(formulaFile);
+	bool initSolution[formula.v];
+
+    high_resolution_clock::time_point t1, t2;
+	
+	for (int i = 1; i <= 100; i++) {
+		formula.resetSolution(initSolution);
+
+		cout << (k * 0.2) << '\t'
+			 << formulaName << '\t'
+			 << i << '\t';
+
+		t1 = high_resolution_clock::now();
+		GRASP s(formula, formula.v * 3, k);
+		s.test(cout, initSolution, timeLimit);
+		t2 = high_resolution_clock::now();
+
+		cout << endl;
+
+	}
+
+}
+
 int main(int argc, char* argv[]) {
 	// minutes -> seconds -> milliseconds
 	uint timeLimit = 20 * 60 * 1000;
 	string inst[] = { "par8-5-c", "flat50-1", "flat75-1", "flat100-1" };
-
-	// Comparison tests
 	string gsat("gsat");
 	string walksat("walksat");
 	string tabu("tabu");
+	string grasp("grasp");
+
+	// Greedy test
+	string formulaName(argv[1]);
+	uint k = atoi(argv[2]);
+	//testGreedy(formulaName, k);
+	testGRASP(formulaName, timeLimit, k);
+
+/*
+	// Comparison tests
 	for (int i = 0; i < 4; i++) {
 		test(inst[i], gsat, timeLimit);
 		test(inst[i], walksat, timeLimit);
 		test(inst[i], tabu, timeLimit);
+		//test(inst[i], grasp, timeLimit);
 	}
+*/
 
 /*
 	// Tabu D tests

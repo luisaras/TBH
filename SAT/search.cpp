@@ -38,7 +38,7 @@ public:
             //cout << current << endl;
             t2 = high_resolution_clock::now();
         }
-        out << duration_cast<milliseconds>(t2 - t1).count() * 0.001f << '\t' << retries;
+        out << duration_cast<milliseconds>(t2 - t1).count() * 0.001f << '\t' << steps;
     }
     
 protected:
