@@ -74,7 +74,7 @@ void testAlpha(Formula& formula, uint k, bool grasp) {
 			 << i << '\t';
 		if (grasp) {
 			// Run Greedy + GSAT
-			GRASP s(formula, k * 0.2, STOP);
+			GRASP s(formula, STOP, k * 0.2);
 			s.test((uint) -1);
 			cout << s.executionTime * 0.001f << '\t' << s.best << '\t' << s.steps << endl;
 		} else {
@@ -115,6 +115,8 @@ int main(int argc, char* argv[]) {
 			testD(f, timeLimit, f.v * 2 / 3, f.v, f.v * 3);
 		else if (interval == 4) 
 			testD(f, timeLimit, f.v / 4, f.v / 4, f.v * 3);
+		else if (interval == 5) 
+			testD(f, timeLimit, f.v / 10, f.v / 10, f.v * 3);
 	} else if (testType == "alpha") {
 		// instance alg k
 		uint k = atoi(argv[4]);
