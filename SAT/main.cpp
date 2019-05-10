@@ -3,7 +3,7 @@
 #include <climits>
 
 #include "search.cpp"
-#define SAMPLES 15
+#define SAMPLES 10
 
 // Test an exact local search method.
 // searchName: gsat, walksat or tabu
@@ -114,7 +114,11 @@ int main(int argc, char* argv[]) {
 		else if (interval == 3) 
 			testD(f, timeLimit, f.v * 2 / 3, f.v, f.v * 3);
 		else if (interval == 4) 
+			testD(f, timeLimit, f.v / 2, f.v / 2, f.v * 3);
+		else if (interval == 5)
 			testD(f, timeLimit, f.v / 4, f.v / 4, f.v * 3);
+		else if (interval == 6)
+			testD(f, timeLimit, f.v / 10, f.v / 10, f.v * 3);
 	} else if (testType == "alpha") {
 		// instance alg k
 		uint k = atoi(argv[4]);
