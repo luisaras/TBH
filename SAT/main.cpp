@@ -74,7 +74,7 @@ void testAlpha(Formula& formula, uint k, bool grasp) {
 			 << i << '\t';
 		if (grasp) {
 			// Run Greedy + GSAT
-			GRASP s(formula, k * 0.2, STOP);
+			GRASP s(formula, STOP, k * 0.2);
 			s.test((uint) -1);
 			cout << s.executionTime * 0.001f << '\t' << s.best << '\t' << s.steps << endl;
 		} else {

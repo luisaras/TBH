@@ -1,6 +1,7 @@
 #include "formula.cpp"
 #include <map>
 	using std::map;
+#include <cmath>
 
 uint greedy(Formula& formula, bool* solution, double alpha) {
 	// Satisfied clauses
@@ -39,13 +40,13 @@ uint greedy(Formula& formula, bool* solution, double alpha) {
 			// Update best/worst
 			if (w > best)
 				best = w;
-			else if (w < worst)
+			if (w < worst)
 				worst = w;
 			u[v] = w;
 		}
 
 		// Select alpha% best
-		double limit = alpha * worst + (1 - alpha) * best;
+		uint limit = ceil(alpha * worst + (1 - alpha) * best);
 		for (int v : N) {
 			if (u[v] < limit)
 				u.erase(v);

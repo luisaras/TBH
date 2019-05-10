@@ -196,7 +196,8 @@ protected:
 class GRASP : public GSAT {
 public:
 
-    GRASP(Formula& formula, short maxLocal = NONE, double alpha = BEST_ALPHA) : GSAT(formula, (uint) -1, maxLocal) {
+    GRASP(Formula& formula, short maxLocal = NONE, double alpha = BEST_ALPHA) : 
+            GSAT(formula, (uint) -1, maxLocal) {
         this->alpha = alpha;
     }
 
