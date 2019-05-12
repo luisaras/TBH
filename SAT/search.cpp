@@ -8,7 +8,8 @@ using namespace std::chrono;
 #define STOP 1
 #define RESET 2
 
-#define BEST_ALPHA 1
+#define BEST_G_ALPHA 0.6
+#define BEST_C_ALPHA 0.6
 #define BEST_DMIN 0
 #define BEST_DMAX f.v / 3
 
@@ -196,7 +197,7 @@ protected:
 class GRASP : public GSAT {
 public:
 
-    GRASP(Formula& formula, short maxLocal = NONE, double alpha = BEST_ALPHA) : 
+    GRASP(Formula& formula, short maxLocal = NONE, double alpha = BEST_G_ALPHA) : 
             GSAT(formula, (uint) -1, maxLocal) {
         this->alpha = alpha;
     }

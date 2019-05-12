@@ -65,26 +65,47 @@ void testD(Formula& formula, uint timeLimit, uint dmin, uint dmax, uint dp) {
 
 // Test a k value for a given greedy method.
 // grasp: true will use GRASP method, false will use just a greedy constructive method.
-void testAlpha(Formula& formula, uint k, bool grasp) {
+void testAlpha(Formula& formula, uint k, char search, bool printName = false) {
 	// alpha  instance  rep  time  v steps
 	for (int i = 1; i <= 1000; i++) {
 		// Print name
-		cout << (k * 0.2) << '\t'
-			 << formula.name << '\t'
+		if (printName)
+			cout << search << '\t';
+		else
+			cout << (k * 0.2) << '\t';
+		cout << formula.name << '\t'
 			 << i << '\t';
-		if (grasp) {
+		if (search == 'G') {
 			// Run Greedy + GSAT
 			GRASP s(formula, STOP, k * 0.2);
 			s.test((uint) -1);
-			cout << s.executionTime * 0.001f << '\t' << s.best << '\t' << s.steps << endl;
-		} else {
+			if (printName)
+				cout << s.best << endl;
+			else
+				cout << s.executionTime * 0.001f << '\t' << s.best << '\t' << s.steps << endl;
+		} else if (search == 'C') {
 			// Run Greedy
 			high_resolution_clock::time_point t1, t2;
 			bool solution[formula.v];
 			t1 = high_resolution_clock::now();
 			uint result = greedy(formula, solution, k * 0.2);
 			t2 = high_resolution_clock::now();
-			cout << duration_cast<milliseconds>(t2 - t1).count() * 0.001f << '\t' << result << endl;
+			if (printName)
+				cout << result << endl;
+			else
+				cout << duration_cast<milliseconds>(t2 - t1).count() * 0.001f << '\t' << result << endl;
+		} else {
+			// Run ACO
+			ACO s(formula, k * 0.2, 1 - k * 0.2, 0.5, 10);
+			high_resolution_clock::time_point t1, t2;
+			bool solution[formula.v];
+			t1 = high_resolution_clock::now();
+			uint result = s.search(solution);
+			t2 = high_resolution_clock::now();
+			if (printName)
+				cout << result << endl;
+			else
+				cout << duration_cast<milliseconds>(t2 - t1).count() * 0.001f << '\t' << result << endl;
 		}
 	}
 }
@@ -121,9 +142,13 @@ int main(int argc, char* argv[]) {
 			testD(f, timeLimit, f.v / 10, f.v / 10, f.v * 3);
 	} else if (testType == "alpha") {
 		// instance alg k
-		uint k = atoi(argv[4]);
-		string searchName(argv[3]);
-		testAlpha(f, k, searchName == "grasp");
+		if (argc >= 5) {
+			uint k = atoi(argv[4]);
+			testAlpha(f, k, argv[3][0], false);
+		} else {
+			testAlpha(f, BEST_C_ALPHA, 'C', true);
+			testAlpha(f, BEST_G_ALPHA, 'G', true);
+		}
 	}
 	
     return 0;
