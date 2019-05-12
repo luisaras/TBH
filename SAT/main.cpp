@@ -3,7 +3,7 @@
 #include <climits>
 
 #include "search.cpp"
-#define SAMPLES 10
+#define SAMPLES 15
 
 // Test an exact local search method.
 // searchName: gsat, walksat or tabu

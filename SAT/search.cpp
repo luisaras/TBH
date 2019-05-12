@@ -8,9 +8,9 @@ using namespace std::chrono;
 #define STOP 1
 #define RESET 2
 
-#define BEST_ALPHA 0.8
+#define BEST_ALPHA 1
 #define BEST_DMIN 0
-#define BEST_DMAX f.v
+#define BEST_DMAX f.v / 3
 
 class Search {
 public:
