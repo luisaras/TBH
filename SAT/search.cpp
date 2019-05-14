@@ -31,9 +31,9 @@ public:
         high_resolution_clock::time_point start = high_resolution_clock::now();
 
         // Initial solution (random or greedy)
-        bool solution[formula.v];
+        Solution solution(formula);
         resetSolution(formula, solution);
-        uint last = 0, current = formula.evaluate(solution);
+        uint last = 0, current = solution.value;
 
         for (uint i = 0; true; i++, steps++) {
             // Check if global/local maximum is found
@@ -58,7 +58,9 @@ public:
             current = step(solution);
             executionTime = duration_cast<milliseconds>(high_resolution_clock::now() - start).count();
         }
-        
+        if (best != formula.evaluate(solution.attribution)) {
+            cout << best << " " << formula.evaluate(solution.attribution) << endl;
+        }
         return true;
     }
     
@@ -68,10 +70,10 @@ protected:
 	uint period;
     short maxLocal;
 	
-	virtual int step(bool* solution) = 0;
+	virtual int step(Solution& solution) = 0;
 
-    virtual void resetSolution(Formula& formula, bool* solution) {
-        formula.resetSolution(solution);
+    virtual void resetSolution(Formula& formula, Solution& solution) {
+        solution.reset(formula);
     }
 
 };
@@ -83,21 +85,26 @@ public:
 	
 protected:
 
-    int step(bool* solution) {
-        vector<uint> unsat = formula.unsatClauses(solution);
-        int c = rand() % unsat.size();
-        Clause& clause = formula.clauses[unsat[c]];
-        int best = 0;
-        int vbest = formula.testFlip(index(clause[0]), solution);
-        for (int i = 1; i < (int) clause.size(); i++) {
-            int vi = formula.testFlip(index(clause[i]), solution);
+    int step(Solution& solution) {
+        uint c = solution.getUnsat(formula, rand() % (formula.c - solution.value));
+        Clause& clause = formula.clauses[c];
+        uint best = 0;
+        uint vbest = solution.testFlip(formula, index(clause[0]));
+        uint eq = 1;
+        for (uint ci = 1; ci < clause.size(); ci++) {
+            uint i = index(clause[ci]);
+            uint vi = solution.testFlip(formula, i);
             if (vi > vbest) {
                 best = i;
                 vbest = vi;
+            } else if (vi == vbest) {
+                eq++;
+                if (rand() % eq == 0) {
+                    best = i; vbest = vi;
+                }
             }
         }
-        int i = index(clause[best]);
-        solution[i] = !solution[i];
+        solution.flip(formula, best);
         return vbest;
     }
 
@@ -110,12 +117,12 @@ public:
 
 protected:
 
-    int step(bool* solution) {
+    int step(Solution& solution) {
         uint best = 0;
-        uint vbest = formula.testFlip(0, solution);
+        uint vbest = solution.testFlip(formula, 0);
         uint eq = 1;
         for (uint i = 1; i < formula.v; i++) {
-            uint vi = formula.testFlip(i, solution);
+            uint vi = solution.testFlip(formula, i);
             if (vi > vbest) {
                 best = i; vbest = vi;
                 eq = 1;
@@ -126,7 +133,9 @@ protected:
                 }
             }
         }
-        solution[best] = !solution[best];
+        solution.flip(formula, best);
+        if (solution.value != formula.evaluate(solution.attribution))
+            cout << "WHAT " << solution.value <<" " << formula.evaluate(solution.attribution) << endl;
         return vbest;
     }
 
@@ -160,7 +169,7 @@ protected:
 		return rand() % (dmax - dmin + 1) + dmin;
 	}
 
-    int step(bool* solution) {
+    int step(Solution& solution) {
         if (dcount == dp) {
 			dcount = 0;
 			d = newd();
@@ -173,7 +182,7 @@ protected:
 				tabu[i]--;
 				continue;
 			}
-            uint vi = formula.testFlip(i, solution);
+            uint vi = solution.testFlip(formula, i);
             if (vi > vbest) {
                 best = i; vbest = vi;
                 eq = 1;
@@ -187,7 +196,7 @@ protected:
         dcount++;
         if (best != (uint) -1) {
 			tabu[best] = d;
-			solution[best] = !solution[best];
+            solution.flip(formula, best);
 		}
         return vbest;
     }
@@ -206,8 +215,9 @@ protected:
 
     double alpha;
 
-    void resetSolution(Formula& formula, bool* solution) {
-        greedy(formula, solution, alpha);
+    void resetSolution(Formula& formula, Solution& solution) {
+        greedy(formula, solution.attribution, alpha);
+        solution.updateSat(formula);
         steps += formula.v;
     }
 

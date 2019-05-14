@@ -38,8 +38,10 @@ public:
 		// Static: Percentage of clauses that contain variable i
 		for (int i = 0; i < formula.v; i++) {
 			eta[0][i] = eta[1][i] = 0;
-			for (int c : formula.varClauses[i])
-				eta[c > 0][i]++;
+			for (uint c : formula.varClauses[0][i])
+				eta[0][i]++;
+			for (uint c : formula.varClauses[1][i])
+				eta[1][i]++;
 			eta[0][i] /= formula.c;
 			eta[1][i] /= formula.c;
 		}
