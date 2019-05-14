@@ -33,10 +33,14 @@ struct Formula {
     	this->name = name;
     	string fileName = name + ".cnf";
     	fileName = "instances/" + fileName;
-    	read(fileName); 
+    	read(fileName);
    	}
 
-    ~Formula() { delete [] clauses; }
+    ~Formula() { 
+    	delete [] clauses; 
+    	delete [] varClauses[0];
+    	delete [] varClauses[1];
+    }
 
 	void read(string& name) {
 		ifstream stream(name);
@@ -63,23 +67,20 @@ struct Formula {
 	        	break;
 	        } else {
 	            // New clause
-	            clauses[currentClause].push_back(stoi(s));
-	            int var;
+	            int var = stoi(s);
+	            clauses[currentClause].push_back(var);
+	            varClauses[var > 0][index(var)].insert(currentClause);
 	            while (stream >> var && var != 0) {
 	                clauses[currentClause].push_back(var);
-	                if (var < 0) {
-						varClauses[0][-var - 1].insert(currentClause);
-					} else {
-						varClauses[1][var - 1].insert(currentClause);
-					}
+	                varClauses[var > 0][index(var)].insert(currentClause);
 	            }
 	            currentClause++;
 	        }
 	    }
-	    stream.close();
+ 	    stream.close();
 	}
 
-    uint evaluate(bool* values) {
+    uint evaluate(bool* values) const {
         uint e = 0;
         for (uint i = 0; i < c; i++) {
 			if (isSat(i, values)) {
@@ -89,7 +90,7 @@ struct Formula {
         return e;
     }
 
-    inline uint satCount(uint clause, bool* values) {
+    inline uint satCount(uint clause, bool* values) const {
     	uint c = 0;
 		for (int var : clauses[clause]) {
 			if (var < 0) {
@@ -103,27 +104,20 @@ struct Formula {
 		return c;
 	}
     
-    inline bool isSat(uint clause, bool* values) {
+    inline bool isSat(uint clause, bool* values) const {
 		for (int var : clauses[clause]) {
 			if (var < 0) {
-				if (!values[-var - 1]) {
+				if (!values[-var - 1])
 					return true;
-				}
 			} else {
-				if (values[var - 1]) {
+				if (values[var - 1])
 					return true;
-				}
 			}
 		}
 		return false;
 	}
 
-	inline void resetSolution(bool* solution) {
-	    for (uint i = 0; i < v; i++)
-	        solution[i] = rand() % 2;
-	}
-
-	inline void copySolution(bool* orig, bool* dest) {
+	inline void copySolution(bool* orig, bool* dest) const {
 		for (uint i = 0; i < v; i++)
 			dest[i] = orig[i];
 	}
@@ -133,55 +127,36 @@ struct Formula {
 struct Solution {
 public:
 
-	uint value;
+	uint value = 0;
 	bool* attribution = 0;
 
-	Solution (Formula& f) {
-		reset(f);
+	Solution (const Formula& f) {
+		attribution = new bool[f.v];
+		satCounts = new uint[f.c];
 	}
 
 	~Solution() {
 		delete [] attribution;
-		delete [] satClauses;
+		delete [] satCounts;
 	}
 
-	void reset(Formula& f) {
-		if (attribution) {
-			delete [] attribution;
-			delete [] satClauses;
-		}
-		attribution = new bool[f.v];
-		satClauses = new uint[f.c];
+	void reset(const Formula& f) {
 		for (int i = 0; i < f.v; i++)
 			attribution[i] = rand() % 2;
 		updateSat(f);
 	}
 
-	void updateSat(Formula& f) {
+	void updateSat(const Formula& f) {
 		value = 0;
 		for (uint c = 0; c < f.c; c++) {
-			satClauses[c] = f.satCount(c, attribution);
-			if (satClauses[c] > 0)
-				value++;
+			satCounts[c] = f.satCount(c, attribution);
+			value += satCounts[c] > 0;
 		}
 	}
 
-	uint testFlip(Formula& f, uint i) {
-		uint value = this->value;
-		value += testFlip(f, i, 0, attribution[i] == 1);
-		value += testFlip(f, i, 1, attribution[i] == 0);
-		return value;
-	}
-
-	void flip(Formula& f, uint i) {
-		attribution[i] = !attribution[i];
-		flip(f, i, 0);
-		flip(f, i, 1);
-	}
-
-	inline uint getUnsat(Formula& f, uint c) {
+	inline uint getUnsat(const Formula& f, uint c) const {
         for (int i = 0; i < f.c; i++) {
-            if (satClauses[i] == 0) {
+            if (satCounts[i] == 0) {
                 if (c > 0)
                     c--;
                 else
@@ -190,32 +165,63 @@ public:
         }
 	}
 
-private:
-
-	uint* satClauses = 0;
-
-	inline void flip(Formula& f, uint i, bool v) {
-		for (uint c : f.varClauses[v][i]) {
-			if (satClauses[c] == 1) {
-				value--;
-				satClauses[c] = 0;
-			} else if (satClauses[c] == 0 && attribution[i] == v) {
+	inline uint evaluate(uint c) const {
+		uint value = 0;
+		for (uint i = 0; i < c; i++)
+			if (satCounts[i] > 0)
 				value++;
-				satClauses[c]++;
+		return value;
+	}
+
+	uint testFlip(const Formula& f, uint i) const {
+		if (attribution[i]) {
+			// Set as false
+			return testFlip(f.varClauses[0][i], f.varClauses[1][i]);
+		} else {
+			// Set as true
+			return testFlip(f.varClauses[1][i], f.varClauses[0][i]);
+		}
+	}
+
+	void flip(const Formula& f, uint i) {
+		if (attribution[i]) {
+			// Set as false
+			flip(f.varClauses[0][i], f.varClauses[1][i]);
+		} else {
+			// Set as true
+			flip(f.varClauses[1][i], f.varClauses[0][i]);
+		}
+		attribution[i] = !attribution[i];
+		for (int c = 0; c < f.c; c++) {
+			if (satCounts[c] != f.satCount(c, attribution)) {
+				cout << satCounts[c] << " "  << f.satCount(c, attribution);
+				exit(-1);
 			}
 		}
 	}
 
-	inline int testFlip(Formula& f, uint i, bool v, uint increase) {
-		int value = 0;
-		for (uint c : f.varClauses[v][i]) {
-			if (satClauses[c] == 1) {
-				value--;
-			} else if (satClauses[c] == 0) {
-				value += increase;
-			}
-		}
+private:
+
+	uint* satCounts = 0;
+
+	inline int testFlip(const unordered_set<uint>& up, const unordered_set<uint>& down) const {
+		uint value = this->value;
+		for (uint c : up)
+			value += satCounts[c] == 0;
+		for (uint c : down)
+			value -= satCounts[c] == 1;
 		return value;
+	}
+
+	inline void flip(const unordered_set<uint>& up, const unordered_set<uint>& down) {
+		for (uint c : up) {
+			value += satCounts[c] == 0;
+			satCounts[c]++;
+		}
+		for (uint c : down) {
+			value -= satCounts[c] == 1;
+			satCounts[c]--;
+		}
 	}
 	
 };

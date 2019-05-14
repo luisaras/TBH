@@ -1,7 +1,4 @@
 #include "aco.cpp"
-#include <map>
-	using std::map;
-#include <cmath>
 
 uint greedy(Formula& formula, bool* solution, double alpha) {
 	// Satisfied clauses
@@ -26,10 +23,10 @@ uint greedy(Formula& formula, bool* solution, double alpha) {
 			// Number of unsat clauses that contain variable v
 			if (v > 0) {
 				for (uint c : formula.varClauses[1][v - 1])
-					w += !sat[c];
+					w += (sat[c] == 0);
 			} else {
 				for (uint c : formula.varClauses[0][-v - 1])
-					w += !sat[c];
+					w += (sat[c] == 0);
 			}
 			// Update best/worst
 			if (w > best)

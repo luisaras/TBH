@@ -134,8 +134,6 @@ protected:
             }
         }
         solution.flip(formula, best);
-        if (solution.value != formula.evaluate(solution.attribution))
-            cout << "WHAT " << solution.value <<" " << formula.evaluate(solution.attribution) << endl;
         return vbest;
     }
 
