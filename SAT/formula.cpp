@@ -192,12 +192,6 @@ public:
 			flip(f.varClauses[1][i], f.varClauses[0][i]);
 		}
 		attribution[i] = !attribution[i];
-		for (int c = 0; c < f.c; c++) {
-			if (satCounts[c] != f.satCount(c, attribution)) {
-				cout << satCounts[c] << " "  << f.satCount(c, attribution);
-				exit(-1);
-			}
-		}
 	}
 
 private:

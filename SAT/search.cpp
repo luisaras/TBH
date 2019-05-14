@@ -88,8 +88,8 @@ protected:
     int step(Solution& solution) {
         uint c = solution.getUnsat(formula, rand() % (formula.c - solution.value));
         Clause& clause = formula.clauses[c];
-        uint best = 0;
-        uint vbest = solution.testFlip(formula, index(clause[0]));
+        uint best = index(clause[0]);
+        uint vbest = solution.testFlip(formula, best);
         uint eq = 1;
         for (uint ci = 1; ci < clause.size(); ci++) {
             uint i = index(clause[ci]);
