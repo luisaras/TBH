@@ -32,11 +32,11 @@ public:
 	}
 
 	uint search(bool* solution) {
-		for (int i = 0; i < formula.v; i++)
-			tau[0][i] = tau[1][i] = 1;
-
-		// Static: Percentage of clauses that contain variable i
+		
 		for (int i = 0; i < formula.v; i++) {
+			// Dynamic: all 1
+			tau[0][i] = tau[1][i] = 1;
+			// Static: Percentage of clauses that contain variable i
 			eta[0][i] = eta[1][i] = 0;
 			for (uint c : formula.varClauses[0][i])
 				eta[0][i]++;
@@ -48,23 +48,21 @@ public:
 
 		// Initial solutions
 		double g[m];
-		uint best = step(g, solution);
-		if (g[best] == 1) 
+		uint best = step(g);
+		if (g[best] == 1)
 			return best;
 
-		for (int i = 0; i < formula.v; i++)
-			tau[0][i] = tau[1][i] = 0;
-
 		while (true) {
-			update_tau(g);
-			uint new_best = step(g, solution);
-			if (g[new_best] == 1) 
-				return new_best;
+			update_tau(g[best] * 1.0 / formula.c, best);
+			uint new_best = step(g);
+			if (g[new_best] == formula.c || g[new_best] == g[best]) {
+				formula.copySolution(solutions[new_best], solution);
+				return g[new_best];
+			}
 			best = new_best;
-			cout << g[best] << endl;
 		}
 
-		return -1;
+		return 0;
 	}
 
 protected:
@@ -85,16 +83,15 @@ protected:
 	uint best_solution;
 	uint best_value = 0;
 
-	inline uint step(double* g, bool* solution) {
+	inline uint step(double* g) {
 		uint best = 0;
 		for (int i = 0; i < m; i++) {
 			build(solutions[i]);
 			uint c = formula.evaluate(solutions[i]);
 			if (c == formula.c) {
-				formula.copySolution(solutions[i], solution);
 				return c;
 			}
-			g[i] = c * 1.0 / formula.c;
+			g[i] = c;
 			if (g[i] > g[best])
 				best = i;
 		}
@@ -103,21 +100,18 @@ protected:
 
 	inline uint build(bool* solution) {
 		for (int i = 0; i < formula.v; i++) {
-			double prob0 = alpha * pow(tau[0][i], alpha) * pow(eta[0][i], beta);
-			double prob1 = alpha * pow(tau[1][i], alpha) * pow(eta[1][i], beta);
-			solution[i] = unif(re) * (prob0 + prob1) >= prob0;
+			double prob0 = pow(tau[0][i], alpha) * pow(eta[0][i], beta);
+			double prob1 = pow(tau[1][i], alpha) * pow(eta[1][i], beta);
+			solution[i] = unif(re) * (prob0 + prob1) < prob1;
 		}
 	}
 
-	inline void update_tau(double* g) {
+	inline void update_tau(double gs, uint s) {
 		for (int i = 0; i < formula.v; i++) {
-			double v[2];
-			v[0] = v[1] = 0;
-			for (uint s; s < m; s++) {
-				v[solutions[s][i]] += g[s];
-			}
-			tau[0][i] = tau[0][i] * rho + v[0];
-			tau[1][i] = tau[1][i] * rho + v[1];
+			double v[2] = {0, 0};
+			v[solutions[s][i]] = gs;
+			tau[0][i] = tau[0][i] * (1 - rho) + v[0] * rho;
+			tau[1][i] = tau[1][i] * (1 - rho) + v[1] * rho;
 		}
 	}
 

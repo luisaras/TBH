@@ -96,7 +96,7 @@ void testAlpha(Formula& formula, uint k, char search, bool printName = false) {
 				cout << duration_cast<milliseconds>(t2 - t1).count() * 0.001f << '\t' << result << endl;
 		} else {
 			// Run ACO
-			ACO s(formula, k * 0.2, 1 - k * 0.2, 0.5, 10);
+			ACO s(formula, 1, 1, k * 0.2, 10);
 			high_resolution_clock::time_point t1, t2;
 			bool solution[formula.v];
 			t1 = high_resolution_clock::now();
