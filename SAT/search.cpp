@@ -8,8 +8,8 @@ using namespace std::chrono;
 #define STOP 1
 #define RESET 2
 
-#define BEST_G_ALPHA 0.6
-#define BEST_C_ALPHA 0.6
+#define BEST_G_ALPHA 0.2
+#define BEST_C_ALPHA 0.2
 #define BEST_DMIN 0
 #define BEST_DMAX f.v / 3
 
