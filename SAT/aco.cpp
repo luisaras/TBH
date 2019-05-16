@@ -7,7 +7,7 @@
 class ACO {
 public:
 
-	ACO(Formula& f, double a, double b, double r, uint m = 10) : formula(f), unif(0, 1) {
+	ACO(Formula& f, double a, double b, double r, uint m = 10) : formula(f) {
 		solutions = new bool*[m];
 		for (int i = 0; i < m; i++)
 			solutions[i] = new bool[f.v];
@@ -49,27 +49,27 @@ public:
 		// Initial solutions
 		double g[m];
 		uint best = step(g);
-		if (g[best] == 1)
-			return best;
 
+		uint convergence = 0;
 		while (true) {
+			if (g[best] == formula.c || convergence == 1) {
+				formula.copySolution(solutions[best], solution);
+				return g[best];
+			}
 			update_tau(g[best] * 1.0 / formula.c, best);
 			uint new_best = step(g);
-			if (g[new_best] == formula.c || g[new_best] == g[best]) {
-				formula.copySolution(solutions[new_best], solution);
-				return g[new_best];
+			if (g[new_best] <= g[best]) {
+				convergence++;
+			} else {
+				convergence = 0;
+				best = new_best;
 			}
-			best = new_best;
 		}
 
 		return 0;
 	}
 
 protected:
-
-	// Random
-	std::uniform_real_distribution<double> unif;
-	std::default_random_engine re;
 
 	// Parameters
 	uint m;
@@ -82,6 +82,7 @@ protected:
 	Formula& formula;
 	uint best_solution;
 	uint best_value = 0;
+	uint steps = 0;
 
 	inline uint step(double* g) {
 		uint best = 0;
@@ -95,6 +96,7 @@ protected:
 			if (g[i] > g[best])
 				best = i;
 		}
+		steps++;
 		return best;
 	}
 
@@ -102,7 +104,8 @@ protected:
 		for (int i = 0; i < formula.v; i++) {
 			double prob0 = pow(tau[0][i], alpha) * pow(eta[0][i], beta);
 			double prob1 = pow(tau[1][i], alpha) * pow(eta[1][i], beta);
-			solution[i] = unif(re) * (prob0 + prob1) < prob1;
+			double r = rand() * 1.0 / RAND_MAX;
+			solution[i] = r * (prob0 + prob1) < prob1;
 		}
 	}
 

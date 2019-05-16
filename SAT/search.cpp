@@ -37,7 +37,7 @@ public:
 
         for (uint i = 0; true; i++, steps++) {
             // Check if global/local maximum is found
-            if (current == formula.c || (maxLocal == STOP && current == last)) {
+            if (current == formula.c || (maxLocal == STOP && current <= last)) {
                 best = current;
                 break;
             }
@@ -46,7 +46,7 @@ public:
                 return false;
             }
             // Reset solution if reached max step count
-            if (i >= period || (maxLocal == RESET && current == last)) {
+            if (i >= period || (maxLocal == RESET && current <= last)) {
                 resetSolution(formula, solution);
                 if (current > best)  {
                     best = current;
