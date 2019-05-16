@@ -48,21 +48,23 @@ public:
 
 		// Initial solutions
 		double g[m];
-		uint best = step(g);
+		uint best = step(g); // g of current best solution
+		formula.copySolution(solutions[best], solution);
+		best = g[best];
 
 		uint convergence = 0;
 		while (true) {
-			if (g[best] == formula.c || convergence == 1) {
-				formula.copySolution(solutions[best], solution);
-				return g[best];
+			if (best == formula.c || convergence == m) {
+				return best;
 			}
-			update_tau(g[best] * 1.0 / formula.c, best);
+			update_tau(best * 1.0 / formula.c, solution);
 			uint new_best = step(g);
-			if (g[new_best] <= g[best]) {
+			if (g[new_best] <= best) {
 				convergence++;
 			} else {
 				convergence = 0;
-				best = new_best;
+				best = g[new_best];
+				formula.copySolution(solutions[new_best], solution);
 			}
 		}
 
@@ -93,7 +95,7 @@ protected:
 				return c;
 			}
 			g[i] = c;
-			if (g[i] > g[best])
+			if (c > g[best])
 				best = i;
 		}
 		steps++;
@@ -109,10 +111,10 @@ protected:
 		}
 	}
 
-	inline void update_tau(double gs, uint s) {
+	inline void update_tau(double gs, bool* s) {
 		for (int i = 0; i < formula.v; i++) {
 			double v[2] = {0, 0};
-			v[solutions[s][i]] = gs;
+			v[s[i]] = gs;
 			tau[0][i] = tau[0][i] * (1 - rho) + v[0] * rho;
 			tau[1][i] = tau[1][i] * (1 - rho) + v[1] * rho;
 		}
