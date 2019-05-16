@@ -1,4 +1,6 @@
 #include "aco.cpp"
+#include <unordered_map>
+	using std::unordered_map;
 
 uint greedy(Formula& formula, bool* solution, double alpha) {
 	// Satisfied clauses
@@ -14,7 +16,7 @@ uint greedy(Formula& formula, bool* solution, double alpha) {
 	}
 
 	while (!N.empty()) {
-		map<int, uint> u;
+		unordered_map<int, uint> u;
 
 		// Find best / worst w values
 		uint best = 0, worst = -1;

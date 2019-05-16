@@ -1,6 +1,4 @@
 #include "formula.cpp"
-#include <map>
-	using std::map;
 #include <cmath>
 #include <random>
 
