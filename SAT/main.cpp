@@ -3,6 +3,7 @@
 #include <climits>
 
 #include "search.cpp"
+#include "eda.cpp"
 #define SAMPLES 15
 
 // Test an exact local search method.
@@ -12,7 +13,7 @@ void testLocal(Formula& formula, string& searchName, uint timeLimit) {
 	Search* s;
     if (searchName == "gsat") {
     	s = new GSAT(formula, formula.v * 3);
-    } else if (searchName == "walksat") { 
+    } else if (searchName == "walksat") {
 	    s = new WalkSAT(formula, formula.v * 3);
 	} else if (searchName == "tabu") {
 		s = new TabuGSAT(formula, formula.v * 3);

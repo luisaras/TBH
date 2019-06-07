@@ -121,6 +121,11 @@ struct Formula {
 		for (uint i = 0; i < v; i++)
 			dest[i] = orig[i];
 	}
+
+	inline void resetSolution(bool* solution) const {
+		for (int i = 0; i < v; i++)
+			solution[i] = rand() % 2;
+	}
 	
 };
 
@@ -141,8 +146,7 @@ public:
 	}
 
 	void reset(const Formula& f) {
-		for (int i = 0; i < f.v; i++)
-			attribution[i] = rand() % 2;
+		f.resetSolution(attribution);
 		updateSat(f);
 	}
 
