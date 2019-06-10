@@ -1,4 +1,6 @@
 #include "greedy.cpp"
+#include <algorithm>
+    using std::sort;
 #include <ostream>
     using std::ostream;
 #include <chrono>
@@ -12,6 +14,8 @@ using namespace std::chrono;
 #define BEST_C_ALPHA 0.2
 #define BEST_DMIN 0
 #define BEST_DMAX f.v / 3
+
+#define BEST_C_UMDA f.v * 10
 
 class Search {
 public:
@@ -217,6 +221,60 @@ protected:
         greedy(formula, solution.attribution, alpha);
         solution.updateSat(formula);
         steps += formula.v;
+    }
+
+};
+
+class UMDA : public Search {
+public:
+
+    UMDA(Formula& f, uint s, uint c) : Search(f, (uint) -1, NONE) {
+        this->s = s; 
+        this->c = c;
+        model = new double[f.v];
+        for (int i = 0; i < f.v; i++)
+            model[i] = 0.5;
+    }
+
+    UMDA(Formula& f) : UMDA(f, BEST_C_UMDA / 2, BEST_C_UMDA) {}
+
+    ~UMDA() { delete [] model; }
+
+protected:
+
+    uint s, c;
+    double* model;
+
+    int step(Solution& solution) {
+        // Create new solutions.
+        bool solutions[c][formula.v];
+        uint values[c];
+        uint order[c];
+        for (uint i = 0; i < c; i++) {
+            for (uint v = 0; v < formula.v; v++) {
+                solutions[i][v] = rand() * 1.0 / RAND_MAX < model[v];
+            }
+            values[i] = formula.evaluate(solutions[i]);
+            order[i] = i;
+        }
+        // Select best.         
+        sort(order, order+c, [&values](uint i, uint j) {
+            return values[i] > values[j]; 
+        });
+        formula.copySolution(solutions[order[0]], solution.attribution);
+        // Update model.
+        //cout << endl;
+        for (uint v = 0; v < formula.v; v++) {
+            model[v] = 0;
+            for (uint i = 0; i < s; i++) {
+                uint id = order[i];
+                model[v] += solutions[id][v];
+            }
+            model[v] /= s;
+            //cout << model[v] << " ";
+        }
+        cout << values[order[0]] << endl;
+        return values[order[0]];
     }
 
 };

@@ -3,7 +3,6 @@
 #include <climits>
 
 #include "search.cpp"
-#include "eda.cpp"
 #define SAMPLES 15
 
 // Test an exact local search method.
@@ -19,6 +18,8 @@ void testLocal(Formula& formula, string& searchName, uint timeLimit) {
 		s = new TabuGSAT(formula, formula.v * 3);
 	} else if (searchName == "grasp") {
 		s = new GRASP(formula, RESET);
+	} else if (searchName == "umda") {
+		s = new UMDA(formula);
 	} else {
 		cout << "Search not recognized: " << searchName << endl;
 		return;
