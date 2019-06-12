@@ -6,16 +6,28 @@
 #include <chrono>
 using namespace std::chrono;
 
+// Reset types
 #define NONE 0
 #define STOP 1
 #define RESET 2
 
+// Greedy
 #define BEST_G_ALPHA 0.2
 #define BEST_C_ALPHA 0.2
+
+// Tabu
 #define BEST_DMIN 0
 #define BEST_DMAX f.v / 3
 
-#define BEST_C_UMDA f.v * 10
+// UMDA
+#define BEST_C_UMDA 1024
+#define BEST_L_UMDA 0.1
+
+// PBIL
+#define BEST_C_PBIL 100
+#define BEST_L_PBIL 0.1
+#define BEST_PM 0.02
+#define BEST_M 0.05
 
 class Search {
 public:
@@ -228,21 +240,23 @@ protected:
 class UMDA : public Search {
 public:
 
-    UMDA(Formula& f, uint s, uint c) : Search(f, (uint) -1, NONE) {
+    UMDA(Formula& f, uint s, uint c, double l) : Search(f, (uint) -1, NONE) {
         this->s = s; 
         this->c = c;
+        this->l = l;
         model = new double[f.v];
         for (int i = 0; i < f.v; i++)
             model[i] = 0.5;
     }
 
-    UMDA(Formula& f) : UMDA(f, BEST_C_UMDA / 2, BEST_C_UMDA) {}
+    UMDA(Formula& f) : UMDA(f, BEST_C_UMDA / 2, BEST_C_UMDA, BEST_L_UMDA) {}
 
     ~UMDA() { delete [] model; }
 
 protected:
 
     uint s, c;
+    double l;
     double* model;
 
     int step(Solution& solution) {
@@ -250,31 +264,85 @@ protected:
         bool solutions[c][formula.v];
         uint values[c];
         uint order[c];
+        double mean = 0;
         for (uint i = 0; i < c; i++) {
             for (uint v = 0; v < formula.v; v++) {
                 solutions[i][v] = rand() * 1.0 / RAND_MAX < model[v];
             }
             values[i] = formula.evaluate(solutions[i]);
             order[i] = i;
+            mean += values[i];
         }
+        mean /= c;
         // Select best.         
         sort(order, order+c, [&values](uint i, uint j) {
             return values[i] > values[j]; 
         });
-        formula.copySolution(solutions[order[0]], solution.attribution);
+        if (values[order[0]] > solution.value) {
+        	formula.copySolution(solutions[order[0]], solution.attribution);
+        	solution.updateSat(formula);
+        }
         // Update model.
-        //cout << endl;
         for (uint v = 0; v < formula.v; v++) {
-            model[v] = 0;
+        	// Fraction of best solutions that contain variable v as true 
+            double freq = 0; 
             for (uint i = 0; i < s; i++) {
                 uint id = order[i];
-                model[v] += solutions[id][v];
+                freq += solutions[id][v] * (values[id] - mean) / mean;
             }
-            model[v] /= s;
-            //cout << model[v] << " ";
+            freq /= s;
+            // Update probabilities
+            model[v] = (1 - l) * model[v] + l * (freq - model[v]);
         }
-        cout << values[order[0]] << endl;
         return values[order[0]];
     }
+
+};
+
+class PBIL : public UMDA {
+public:
+
+	PBIL (Formula& f, uint c, double l, double m, double pm) : UMDA(f, 1, c, l) {
+		this->m = m;
+		this->pm = pm;
+	}
+
+	PBIL (Formula& f) : PBIL(f, BEST_C_PBIL, BEST_L_PBIL, BEST_M, BEST_PM) {}
+
+protected:
+
+	double m, pm;
+
+	int step(Solution& solution) {
+		int result = UMDA::step(solution);
+		for (uint v = 0; v < formula.v; v++) {
+			if (rand() < pm * RAND_MAX)
+				model[v] = (1 - m) * model[v] + m * (rand() % 2);
+		}
+		return result;
+	}
+
+};
+
+class MIMIC : public Search {
+public:
+
+	MIMIC (Formula& f) : Search(f, (uint) -1, NONE) {
+		dependence = new uint[f.v];
+		uint last = 0;
+		for (uint i = 1; i < f.v; i++) {
+			// TODO: greedy
+			dependence[i] = i;
+		}
+		dependence[last] = last;
+	}
+
+protected:
+
+	uint* dependence;
+
+	int step(Solution* solution) {
+
+	}
 
 };
