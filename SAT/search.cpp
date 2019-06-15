@@ -29,6 +29,9 @@ using namespace std::chrono;
 #define BEST_PM 0.02
 #define BEST_M 0.05
 
+// MIMIC
+#define BEST_C_MIMIC 200
+
 class Search {
 public:
 
@@ -317,7 +320,7 @@ protected:
 		int result = UMDA::step(solution);
 		for (uint v = 0; v < formula.v; v++) {
 			if (rand() < pm * RAND_MAX)
-				model[v] = (1 - m) * model[v] + m * (rand() % 2);
+				model[v] = (1 - m) * model[v] + m * (1.0 * rand() / RAND_MAX);
 		}
 		return result;
 	}
@@ -327,22 +330,135 @@ protected:
 class MIMIC : public Search {
 public:
 
-	MIMIC (Formula& f) : Search(f, (uint) -1, NONE) {
-		dependence = new uint[f.v];
-		uint last = 0;
-		for (uint i = 1; i < f.v; i++) {
-			// TODO: greedy
-			dependence[i] = i;
-		}
-		dependence[last] = last;
+	MIMIC (Formula& f, uint c) : Search(f, (uint) -1, NONE) {
+        this->c = c;
+        order = new uint[f.v]; // Probability order[k] depends on value of order[k - 1]
+        model[0] = new double[f.v]; // P(x_k = 0)
+        model[1] = new double[f.v]; // P(x_k = 1)
+        population = new bool*[c];
+        // Initial population
+        for (uint i = 0; i < c; i++)
+            population[i] = new bool[f.v];
+        for (uint k = 0; k < f.v; k++) {
+            // Uniform probabilities
+            model[0][k] = model[1][k] = 0.5;
+            order[k] = 0;
+        }
+        createPopulation();
+        // Empirical probabilities
+        for (uint k = 0; k < f.v; k++) {
+            model[0][k] = 0;
+            for (uint i = 0; i < c; i++)
+                model[0][k] += 1.0 * population[i][k] / c;
+            model[1][k] = model[0][k];
+        }
+        // Find permutation
+        unordered_set<uint> unset;
+        for (uint v = 0; v < f.v; v++)
+            unset.insert(v);
+        uint previous = nextVariable(unset);
+        order[0] = previous;
+        for (uint k = 1; k < f.v; k++) {
+            initializeModel(previous);
+            unset.erase(previous);
+            previous = nextVariable(unset, previous);
+            order[k] = previous;
+        }
+        // Average fitness
+        tetha = 0;
+        for (uint i = 0; i < c; i++)
+            tetha += 1.0 * f.evaluate(population[i]) / c;
 	}
+
+    MIMIC(Formula& f) : MIMIC(f, BEST_C_MIMIC) {}
 
 protected:
 
-	uint* dependence;
+    uint c;
+	uint* order;
+    double* model[2];
+    bool** population;
+    double tetha, l = 1;
 
-	int step(Solution* solution) {
+    uint nextVariable(unordered_set<uint>& unset, uint previous = 0) {
+        // Probability of each solution
+        double P[c];
+        for (uint i = 0; i < c; i++) {
+            P[i] = 1;
+            for (uint k = 0; k < formula.v; k++) {
+                double* model = this->model[population[i][previous]];
+                P[i] *= population[i][k] ? model[k] : 1 - model[k];
+            }
+        }
+        // Best candidate
+        uint best = -1;
+        double h_best = 1;
+        for (uint k : unset) {
+            // Empirical entropy
+            double h_k = 0;
+            for (uint i = 0; i < c; i++) {
+                double* model = this->model[population[i][previous]];
+                h_k -= P[i] * log2(population[i][k] ? model[k] : 1 - model[k]);
+            }
+            if (h_k < h_best) {
+                h_best = h_k;
+                best = k;
+            }
+        }
+        return best;
+    }
 
+    void initializeModel(uint previous) {
+        for (uint k = 0; k < formula.v; k++) {
+            model[0][k] = model[1][k] = 0;
+            for (uint i = 0; i < c; i++) {
+                double* model = this->model[population[i][previous]];
+                model[k] += population[i][k] * 1.0 / c;
+            }
+        }
+    }
+
+    void createPopulation() {
+        for (uint i = 0; i < c; i++) {
+            population[i][order[0]] = rand() < model[1][order[0]] * RAND_MAX;
+            for (uint k = 1; k < formula.v; k++) {
+                double* model = this->model[population[i][order[k - 1]]];
+                population[i][order[k]] = rand() < model[order[k]] * RAND_MAX;
+            }
+        }
+    }
+
+	int step(Solution& solution) {
+        // New population
+        createPopulation();
+        uint fittest = 0;
+        uint fitness[c];
+        for (uint i = 0;  i < c; i++) {
+            fitness[c] = formula.evaluate(population[i]);
+            if (fitness[c] > fitness[fittest])
+                fittest = c;
+        }
+        // Update model
+        for (uint k = 0; k < formula.v; k++) {
+            double p[2];
+            p[0] = p[1] = 0;
+            for (uint i = 0; i < c; i++) {
+                if (fitness[i] >= tetha) {
+                    bool value = population[i][order[k - 1]];
+                    p[value] += population[i][k] * 1.0 / c;
+                }
+            }
+            model[0][k] = (1 - l) * model[0][k] + l * p[0];
+            model[1][k] = (1 - l) * model[1][k] + l * p[1];
+        }
+        tetha = 0;
+        for (uint i = 0; i < c; i++)
+            tetha += 1.0 * formula.evaluate(population[i]) / c;
+        if (fitness[fittest] > solution.value) {
+            formula.copySolution(population[fittest], solution.attribution);
+            solution.updateSat(formula);
+        }
+        return fitness[fittest];
 	}
 
 };

@@ -20,6 +20,10 @@ void testLocal(Formula& formula, string& searchName, uint timeLimit) {
 		s = new GRASP(formula, RESET);
 	} else if (searchName == "umda") {
 		s = new UMDA(formula);
+	} else if (searchName == "pbil") {
+		s = new PBIL(formula);
+	} else if (searchName == "mimic") {
+		s = new MIMIC(formula);
 	} else {
 		cout << "Search not recognized: " << searchName << endl;
 		return;

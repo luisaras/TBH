@@ -117,6 +117,13 @@ struct Formula {
 		return false;
 	}
 
+	inline uint hammingWeight(bool* s) {
+		uint h = 0;
+		for (uint i = 0; i < v; i++)
+			h += s[i];
+		return h;
+	}
+
 	inline void copySolution(bool* orig, bool* dest) const {
 		for (uint i = 0; i < v; i++)
 			dest[i] = orig[i];
