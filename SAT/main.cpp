@@ -118,11 +118,9 @@ void testAlpha(Formula& formula, uint k, char search, bool printName = false) {
 
 int main(int argc, char* argv[]) {
 	srand(time(NULL));
-
 	string testType(argv[1]);
 	string formulaName(argv[2]);
-	Formula f(formulaName);
-
+	Formula f(formulaName, testType != "irace");
 	if (testType == "local") {
 		// instance alg minutes
 		string searchName(argv[3]);
@@ -155,7 +153,16 @@ int main(int argc, char* argv[]) {
 			testAlpha(f, BEST_C_ALPHA, 'C', true);
 			testAlpha(f, BEST_G_ALPHA, 'G', true);
 		}
+	} else if (testType == "irace") {
+		srand(atoi(argv[3]));
+		float dmin = atof(argv[4]);
+		float dmax = atof(argv[5]);
+		uint dp = atoi(argv[6]);
+		// Run
+	    TabuGSAT s(f, dp * f.v, dmin * f.v, dmax * f.v);
+		bool success = s.test(30000); // Run for 0.5 minute
+		// Print results
+		cout << f.c - s.best;
 	}
-	
     return 0;
 }

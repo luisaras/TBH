@@ -29,11 +29,15 @@ struct Formula {
 
     unordered_set<uint>* varClauses[2];
 
-    Formula(string& name) { 
+    Formula(string& name, bool relative = true) { 
     	this->name = name;
-    	string fileName = name + ".cnf";
-    	fileName = "instances/" + fileName;
-    	read(fileName);
+    	if (relative) {
+	    	string fileName = name + ".cnf";
+	    	fileName = "instances/" + fileName;
+	    	read(fileName);
+	    } else {
+	    	read(name);
+	    }    	
    	}
 
     ~Formula() { 

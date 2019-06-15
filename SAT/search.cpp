@@ -45,14 +45,14 @@ public:
 
     virtual bool test(uint maxTime) {
         // Stats
-        steps = 0; retries = 0; best = 0; executionTime = 0;
+        steps = 0; retries = 0; executionTime = 0;
 
         high_resolution_clock::time_point start = high_resolution_clock::now();
 
         // Initial solution (random or greedy)
         Solution solution(formula);
         resetSolution(formula, solution);
-        uint last = 0, current = solution.value;
+        uint last = 0, current = best = solution.value;
 
         for (uint i = 0; true; i++, steps++) {
             // Check if global/local maximum is found
@@ -67,18 +67,18 @@ public:
             // Reset solution if reached max step count
             if (i >= period || (maxLocal == RESET && current <= last)) {
                 resetSolution(formula, solution);
-                if (current > best)  {
+                if (current > best)
                     best = current;
-                }
                 i = 0; retries++;
             }
             // Update solution
             last = current;
             current = step(solution);
+            if (maxLocal == NONE) {
+                if (current > best)
+                    best = current;
+            }
             executionTime = duration_cast<milliseconds>(high_resolution_clock::now() - start).count();
-        }
-        if (best != formula.evaluate(solution.attribution)) {
-            cout << best << " " << formula.evaluate(solution.attribution) << endl;
         }
         return true;
     }
@@ -162,7 +162,7 @@ class TabuGSAT : public Search {
 public:
 
 	TabuGSAT(Formula& f, uint dp, uint dmin, uint dmax) : Search(f, (uint) -1, NONE) {
-		tabu = new uint[f.v];
+        tabu = new uint[f.v];
 		for (uint i = 0; i < f.v; i++)
 			tabu[i] = 0;
 		this->dmin = dmin;
@@ -365,12 +365,18 @@ public:
             order[k] = previous;
         }
         // Average fitness
-        tetha = 0;
+        theta = 0;
         for (uint i = 0; i < c; i++)
-            tetha += 1.0 * f.evaluate(population[i]) / c;
+            theta += 1.0 * f.evaluate(population[i]) / c;
 	}
 
     MIMIC(Formula& f) : MIMIC(f, BEST_C_MIMIC) {}
+
+    ~MIMIC() { 
+        for (uint i = 0; i < c; i++)
+            delete [] population[i];
+        delete [] population;
+    }
 
 protected:
 
@@ -378,7 +384,7 @@ protected:
 	uint* order;
     double* model[2];
     bool** population;
-    double tetha, l = 1;
+    double theta, l = 1;
 
     uint nextVariable(unordered_set<uint>& unset, uint previous = 0) {
         // Probability of each solution
@@ -443,7 +449,7 @@ protected:
             double p[2];
             p[0] = p[1] = 0;
             for (uint i = 0; i < c; i++) {
-                if (fitness[i] >= tetha) {
+                if (fitness[i] >= theta) {
                     bool value = population[i][order[k - 1]];
                     p[value] += population[i][k] * 1.0 / c;
                 }
@@ -451,9 +457,9 @@ protected:
             model[0][k] = (1 - l) * model[0][k] + l * p[0];
             model[1][k] = (1 - l) * model[1][k] + l * p[1];
         }
-        tetha = 0;
+        theta = 0;
         for (uint i = 0; i < c; i++)
-            tetha += 1.0 * formula.evaluate(population[i]) / c;
+            theta += 1.0 * formula.evaluate(population[i]) / c;
         if (fitness[fittest] > solution.value) {
             formula.copySolution(population[fittest], solution.attribution);
             solution.updateSat(formula);
