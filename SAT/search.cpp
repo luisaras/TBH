@@ -342,7 +342,7 @@ public:
         for (uint k = 0; k < f.v; k++) {
             // Uniform probabilities
             model[0][k] = model[1][k] = 0.5;
-            order[k] = 0;
+            order[k] = k;
         }
         createPopulation();
         // Empirical probabilities
@@ -352,18 +352,7 @@ public:
                 model[0][k] += 1.0 * population[i][k] / c;
             model[1][k] = model[0][k];
         }
-        // Find permutation
-        unordered_set<uint> unset;
-        for (uint v = 0; v < f.v; v++)
-            unset.insert(v);
-        uint previous = nextVariable(unset);
-        order[0] = previous;
-        for (uint k = 1; k < f.v; k++) {
-            initializeModel(previous);
-            unset.erase(previous);
-            previous = nextVariable(unset, previous);
-            order[k] = previous;
-        }
+        findPermutation();
         // Average fitness
         theta = 0;
         for (uint i = 0; i < c; i++)
@@ -386,6 +375,73 @@ protected:
     bool** population;
     double theta, l = 1;
 
+    void createPopulation() {
+        for (uint i = 0; i < c; i++) {
+            uint id = order[0];
+            population[i][id] = rand() < model[1][id] * RAND_MAX;
+            for (uint k = 1; k < formula.v; k++) {
+                id = order[k];
+                uint previous = order[k - 1];
+                double* model = this->model[population[i][previous]];
+                population[i][id] = rand() < model[id] * RAND_MAX;
+            }
+        }
+    }
+
+	int step(Solution& solution) {
+        // New population
+        createPopulation();
+        uint fittest = 0;
+        uint fitness[c];
+        for (uint i = 0; i < c; i++) {
+            fitness[i] = formula.evaluate(population[i]);
+            if (fitness[i] > fitness[fittest])
+                fittest = i;
+        }
+        // Update model
+        uint id = order[0];
+        double p[2] = {0, 0};
+        for (uint i = 0; i < c; i++) {
+            if (fitness[i] >= theta)
+                p[1] += population[i][id] * 1.0 / c;
+        }
+        model[1][id] = (1 - l) * model[1][id] + l * p[1];
+        for (uint k = 1; k < formula.v; k++) {
+            id = order[k];
+            p[0] = p[1] = 0;
+            uint previous = order[k - 1];
+            for (uint i = 0; i < c; i++) {
+                if (fitness[i] >= theta) {
+                    bool value = population[i][previous];
+                    p[value] += population[i][id] * 1.0 / c;
+                }
+            }
+            model[0][id] = (1 - l) * model[0][id] + l * p[0];
+            model[1][id] = (1 - l) * model[1][id] + l * p[1];
+        }
+        theta = 0;
+        for (uint i = 0; i < c; i++)
+            theta += 1.0 * formula.evaluate(population[i]) / c;
+        if (fitness[fittest] > solution.value) {
+            formula.copySolution(population[fittest], solution.attribution);
+            solution.updateSat(formula);
+        }
+        return fitness[fittest];
+	}
+
+    void findPermutation() {
+        unordered_set<uint> unset;
+        for (uint v = 0; v < formula.v; v++)
+            unset.insert(v);
+        order[0] = nextVariable(unset);
+        unset.erase(order[0]);
+        for (uint k = 1; k < formula.v; k++) {
+            initializeModel(order[k - 1]);
+            order[k] = nextVariable(unset, order[k - 1]);
+            unset.erase(order[k]);
+        }
+    }
+
     uint nextVariable(unordered_set<uint>& unset, uint previous = 0) {
         // Probability of each solution
         double P[c];
@@ -398,15 +454,16 @@ protected:
         }
         // Best candidate
         uint best = -1;
-        double h_best = 1;
+        double h_best;
         for (uint k : unset) {
             // Empirical entropy
             double h_k = 0;
             for (uint i = 0; i < c; i++) {
-                double* model = this->model[population[i][previous]];
+                int value = population[i][previous];
+                double* model = this->model[value];
                 h_k -= P[i] * log2(population[i][k] ? model[k] : 1 - model[k]);
             }
-            if (h_k < h_best) {
+            if (h_k < h_best || best == -1) {
                 h_best = h_k;
                 best = k;
             }
@@ -418,53 +475,11 @@ protected:
         for (uint k = 0; k < formula.v; k++) {
             model[0][k] = model[1][k] = 0;
             for (uint i = 0; i < c; i++) {
-                double* model = this->model[population[i][previous]];
+                bool value = population[i][previous];
+                double* model = this->model[value];
                 model[k] += population[i][k] * 1.0 / c;
             }
         }
     }
-
-    void createPopulation() {
-        for (uint i = 0; i < c; i++) {
-            population[i][order[0]] = rand() < model[1][order[0]] * RAND_MAX;
-            for (uint k = 1; k < formula.v; k++) {
-                double* model = this->model[population[i][order[k - 1]]];
-                population[i][order[k]] = rand() < model[order[k]] * RAND_MAX;
-            }
-        }
-    }
-
-	int step(Solution& solution) {
-        // New population
-        createPopulation();
-        uint fittest = 0;
-        uint fitness[c];
-        for (uint i = 0;  i < c; i++) {
-            fitness[c] = formula.evaluate(population[i]);
-            if (fitness[c] > fitness[fittest])
-                fittest = c;
-        }
-        // Update model
-        for (uint k = 0; k < formula.v; k++) {
-            double p[2];
-            p[0] = p[1] = 0;
-            for (uint i = 0; i < c; i++) {
-                if (fitness[i] >= theta) {
-                    bool value = population[i][order[k - 1]];
-                    p[value] += population[i][k] * 1.0 / c;
-                }
-            }
-            model[0][k] = (1 - l) * model[0][k] + l * p[0];
-            model[1][k] = (1 - l) * model[1][k] + l * p[1];
-        }
-        theta = 0;
-        for (uint i = 0; i < c; i++)
-            theta += 1.0 * formula.evaluate(population[i]) / c;
-        if (fitness[fittest] > solution.value) {
-            formula.copySolution(population[fittest], solution.attribution);
-            solution.updateSat(formula);
-        }
-        return fitness[fittest];
-	}
 
 };
