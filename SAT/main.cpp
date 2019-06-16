@@ -7,7 +7,7 @@
 
 // Test an exact local search method.
 // searchName: gsat, walksat or tabu
-void testLocal(Formula& formula, string& searchName, uint timeLimit) {
+void testLocal(Formula& formula, string& searchName, uint timeLimit, bool printBest = false) {
 	// Get search method
 	Search* s;
     if (searchName == "gsat") {
@@ -40,6 +40,8 @@ void testLocal(Formula& formula, string& searchName, uint timeLimit) {
 		// Print results
 		if (success) {
 			cout << s->executionTime * 0.001f << '\t' << s->steps << endl;
+		} else if (printBest) {
+			cout << s->executionTime * 0.001f << '\t' << s->steps << '\t' << s->best << endl;
 		} else {
 			cout << "NA\tNA" << endl;
 		}
@@ -125,7 +127,8 @@ int main(int argc, char* argv[]) {
 		// instance alg minutes
 		string searchName(argv[3]);
 		uint timeLimit = atoi(argv[4]); // milliseconds
-		testLocal(f, searchName, timeLimit);
+		bool printBest = argc > 5 ? true : false;
+		testLocal(f, searchName, timeLimit, printBest);
 	} else if (testType == "d") {
 		// instance interval minutes
 		uint interval = atoi(argv[3]);
@@ -160,7 +163,7 @@ int main(int argc, char* argv[]) {
 		uint dp = atoi(argv[6]);
 		// Run
 	    TabuGSAT s(f, dp * f.v, dmin * f.v, dmax * f.v);
-		bool success = s.test(30000); // Run for 0.5 minute
+		bool success = s.test(5000); // Run for 5 seconds
 		// Print results
 		cout << f.c - s.best;
 	}

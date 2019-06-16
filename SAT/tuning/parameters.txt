@@ -28,7 +28,7 @@
 # 1:            2:                   3: 4:      5:
 dmin            ""                   r  (0, 1)
 dmax            ""                   r  (0, 1)
-dp              ""                   i  (1, 10)
+dp              ""                   i  (0, 10)
 
 #param1          "--param1 "          i  (1, 10) | mode %in% c("x1", "x2")
 #param2          "--param2 "          i  (1, 10) | mode %in% c("x1", "x3") && real > 2.5 && real <= 3.5
