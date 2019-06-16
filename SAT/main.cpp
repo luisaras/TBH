@@ -119,7 +119,6 @@ void testAlpha(Formula& formula, uint k, char search, bool printName = false) {
 }
 
 int main(int argc, char* argv[]) {
-	srand(time(NULL));
 	string testType(argv[1]);
 	string formulaName(argv[2]);
 	Formula f(formulaName, testType != "irace");
@@ -148,6 +147,7 @@ int main(int argc, char* argv[]) {
 		else if (interval == 6)
 			testD(f, timeLimit, f.v / 10, f.v / 10, f.v * 3);
 	} else if (testType == "alpha") {
+		srand(time(NULL));
 		// instance alg k
 		if (argc >= 5) {
 			uint k = atoi(argv[4]);

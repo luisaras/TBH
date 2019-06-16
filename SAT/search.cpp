@@ -16,8 +16,8 @@ using namespace std::chrono;
 #define BEST_C_ALPHA 0.2
 
 // Tabu
-#define BEST_DMIN 0
-#define BEST_DMAX f.v / 3
+#define BEST_DMIN f.v * 0.04
+#define BEST_DMAX f.v * 0.48
 
 // UMDA
 #define BEST_C_UMDA 1024
@@ -248,13 +248,17 @@ public:
         this->c = c;
         this->l = l;
         model = new double[f.v];
-        for (int i = 0; i < f.v; i++)
-            model[i] = 0.5;
     }
 
     UMDA(Formula& f) : UMDA(f, BEST_C_UMDA / 2, BEST_C_UMDA, BEST_L_UMDA) {}
 
     ~UMDA() { delete [] model; }
+
+    bool test(uint maxTime) {
+        for (int i = 0; i < formula.v; i++)
+            model[i] = 0.5;
+        return Search::test(maxTime);
+    }
 
 protected:
 
@@ -336,27 +340,6 @@ public:
         model[0] = new double[f.v]; // P(x_k = 0)
         model[1] = new double[f.v]; // P(x_k = 1)
         population = new bool*[c];
-        // Initial population
-        for (uint i = 0; i < c; i++)
-            population[i] = new bool[f.v];
-        for (uint k = 0; k < f.v; k++) {
-            // Uniform probabilities
-            model[0][k] = model[1][k] = 0.5;
-            order[k] = k;
-        }
-        createPopulation();
-        // Empirical probabilities
-        for (uint k = 0; k < f.v; k++) {
-            model[0][k] = 0;
-            for (uint i = 0; i < c; i++)
-                model[0][k] += 1.0 * population[i][k] / c;
-            model[1][k] = model[0][k];
-        }
-        findPermutation();
-        // Average fitness
-        theta = 0;
-        for (uint i = 0; i < c; i++)
-            theta += 1.0 * f.evaluate(population[i]) / c;
 	}
 
     MIMIC(Formula& f) : MIMIC(f, BEST_C_MIMIC) {}
@@ -367,6 +350,11 @@ public:
         delete [] population;
     }
 
+    bool test(uint maxTime) {
+        init();
+        return Search::test(maxTime);
+    }
+
 protected:
 
     uint c;
@@ -374,19 +362,6 @@ protected:
     double* model[2];
     bool** population;
     double theta, l = 1;
-
-    void createPopulation() {
-        for (uint i = 0; i < c; i++) {
-            uint id = order[0];
-            population[i][id] = rand() < model[1][id] * RAND_MAX;
-            for (uint k = 1; k < formula.v; k++) {
-                id = order[k];
-                uint previous = order[k - 1];
-                double* model = this->model[population[i][previous]];
-                population[i][id] = rand() < model[id] * RAND_MAX;
-            }
-        }
-    }
 
 	int step(Solution& solution) {
         // New population
@@ -428,6 +403,43 @@ protected:
         }
         return fitness[fittest];
 	}
+
+    void createPopulation() {
+        for (uint i = 0; i < c; i++) {
+            uint id = order[0];
+            population[i][id] = rand() < model[1][id] * RAND_MAX;
+            for (uint k = 1; k < formula.v; k++) {
+                id = order[k];
+                uint previous = order[k - 1];
+                double* model = this->model[population[i][previous]];
+                population[i][id] = rand() < model[id] * RAND_MAX;
+            }
+        }
+    }
+
+    void init() {
+        // Initial population
+        for (uint i = 0; i < c; i++)
+            population[i] = new bool[formula.v];
+        for (uint k = 0; k < formula.v; k++) {
+            // Uniform probabilities
+            model[0][k] = model[1][k] = 0.5;
+            order[k] = k;
+        }
+        createPopulation();
+        // Empirical probabilities
+        for (uint k = 0; k < formula.v; k++) {
+            model[0][k] = 0;
+            for (uint i = 0; i < c; i++)
+                model[0][k] += 1.0 * population[i][k] / c;
+            model[1][k] = model[0][k];
+        }
+        findPermutation();
+        // Average fitness
+        theta = 0;
+        for (uint i = 0; i < c; i++)
+            theta += 1.0 * formula.evaluate(population[i]) / c;
+    }
 
     void findPermutation() {
         unordered_set<uint> unset;
