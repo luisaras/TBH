@@ -30,7 +30,7 @@ using namespace std::chrono;
 #define BEST_M 0.05
 
 // MIMIC
-#define BEST_C_MIMIC 200
+#define BEST_C_MIMIC 100000
 
 class Search {
 public:
@@ -337,8 +337,8 @@ public:
 	MIMIC (Formula& f, uint c) : Search(f, (uint) -1, NONE) {
         this->c = c;
         order = new uint[f.v]; // Probability order[k] depends on value of order[k - 1]
-        model[0] = new double[f.v]; // P(x_k = 0)
-        model[1] = new double[f.v]; // P(x_k = 1)
+        model[0] = new double[f.v]; // P(x_k | !x_k-1)
+        model[1] = new double[f.v]; // P(x_k |  x_k-1)
         population = new bool*[c];
 	}
 
@@ -363,6 +363,23 @@ protected:
     bool** population;
     double theta, l = 1;
 
+    void init() {
+        // Initial population
+        for (uint i = 0; i < c; i++)
+            population[i] = new bool[formula.v];
+        for (uint k = 0; k < formula.v; k++) {
+            // Uniform probabilities
+            model[0][k] = model[1][k] = 0.5;
+            order[k] = k;
+        }
+        createPopulation();
+        findPermutation();
+        // Average fitness
+        theta = 0;
+        for (uint i = 0; i < c; i++)
+            theta += 1.0 * formula.evaluate(population[i]) / c;
+    }
+
 	int step(Solution& solution) {
         // New population
         createPopulation();
@@ -373,14 +390,22 @@ protected:
             if (fitness[i] > fitness[fittest])
                 fittest = i;
         }
-        // Update model
+
+        // Empirical probablity of first variable
+        uint s = 0;
         uint id = order[0];
         double p[2] = {0, 0};
         for (uint i = 0; i < c; i++) {
-            if (fitness[i] >= theta)
-                p[1] += population[i][id] * 1.0 / c;
+            if (fitness[i] >= theta) {
+                p[1] += population[i][id];
+                s++;
+            }
         }
+        p[1] /= s;
+        // Update
         model[1][id] = (1 - l) * model[1][id] + l * p[1];
+
+        // Conditional probabilities of next variables
         for (uint k = 1; k < formula.v; k++) {
             id = order[k];
             p[0] = p[1] = 0;
@@ -391,9 +416,12 @@ protected:
                     p[value] += population[i][id] * 1.0 / c;
                 }
             }
+            // Update
             model[0][id] = (1 - l) * model[0][id] + l * p[0];
             model[1][id] = (1 - l) * model[1][id] + l * p[1];
         }
+
+        // Update theta and best solution.
         theta = 0;
         for (uint i = 0; i < c; i++)
             theta += 1.0 * formula.evaluate(population[i]) / c;
@@ -417,81 +445,75 @@ protected:
         }
     }
 
-    void init() {
-        // Initial population
-        for (uint i = 0; i < c; i++)
-            population[i] = new bool[formula.v];
-        for (uint k = 0; k < formula.v; k++) {
-            // Uniform probabilities
-            model[0][k] = model[1][k] = 0.5;
-            order[k] = k;
-        }
-        createPopulation();
-        // Empirical probabilities
-        for (uint k = 0; k < formula.v; k++) {
-            model[0][k] = 0;
-            for (uint i = 0; i < c; i++)
-                model[0][k] += 1.0 * population[i][k] / c;
-            model[1][k] = model[0][k];
-        }
-        findPermutation();
-        // Average fitness
-        theta = 0;
-        for (uint i = 0; i < c; i++)
-            theta += 1.0 * formula.evaluate(population[i]) / c;
-    }
-
     void findPermutation() {
         unordered_set<uint> unset;
         for (uint v = 0; v < formula.v; v++)
             unset.insert(v);
-        order[0] = nextVariable(unset);
-        unset.erase(order[0]);
+        order[0] = firstVariable();
         for (uint k = 1; k < formula.v; k++) {
-            initializeModel(order[k - 1]);
+            unset.erase(order[k - 1]);
             order[k] = nextVariable(unset, order[k - 1]);
-            unset.erase(order[k]);
         }
     }
 
-    uint nextVariable(unordered_set<uint>& unset, uint previous = 0) {
-        // Probability of each solution
-        double P[c];
-        for (uint i = 0; i < c; i++) {
-            P[i] = 1;
-            for (uint k = 0; k < formula.v; k++) {
-                double* model = this->model[population[i][previous]];
-                P[i] *= population[i][k] ? model[k] : 1 - model[k];
-            }
-        }
-        // Best candidate
-        uint best = -1;
-        double h_best;
-        for (uint k : unset) {
-            // Empirical entropy
-            double h_k = 0;
-            for (uint i = 0; i < c; i++) {
-                int value = population[i][previous];
-                double* model = this->model[value];
-                h_k -= P[i] * log2(population[i][k] ? model[k] : 1 - model[k]);
-            }
-            if (h_k < h_best || best == -1) {
-                h_best = h_k;
+    uint firstVariable() {
+        double best_h = 10000;
+        uint best;
+        for (uint k = 0; k < formula.v; k++) {
+            // Probability
+            double p0, p1 = 0;
+            for (uint i = 0; i < c; i++)
+                p1 += population[i][k];
+            p1 /= c;        // P(x=1)
+            p0 = 1 - p1;    // P(x=0)
+            // Entropy
+            double h = -p1 * log2(p1)
+                       -p0 * log2(p0);
+            if (h < best_h) {
                 best = k;
+                best_h = h;
             }
         }
         return best;
     }
 
-    void initializeModel(uint previous) {
-        for (uint k = 0; k < formula.v; k++) {
-            model[0][k] = model[1][k] = 0;
+    uint nextVariable(unordered_set<uint>& unset, int previous) {
+        double best_h = 10000;
+        uint best;
+        for (uint k : unset) {
+            // Probability
+            double p00, p01 = 0, p10, p11 = 0;
+            double p0, p1 = 0;
             for (uint i = 0; i < c; i++) {
-                bool value = population[i][previous];
-                double* model = this->model[value];
-                model[k] += population[i][k] * 1.0 / c;
+                if (population[i][k]) {
+                    if (population[i][previous])
+                        p11++;
+                    else
+                        p10++;
+                } else {
+                    if (population[i][previous])
+                        p01++;
+                    else
+                        p00++;
+                }
+            }
+            p11 /= c;       // P(x=1,y=1)
+            p10 /= c;       // P(x=1,y=0)
+            p01 /= c;       // P(x=0,y=1)
+            p00 /= c;       // P(x=0,y=0)
+            p1 = p11 + p10; // P(x=1)
+            p0 = p01 + p00; // P(x=0)
+            // Entropy
+            double h = -p00 * log2(p00) / p0
+                       -p01 * log2(p01) / p0
+                       -p10 * log2(p10) / p1
+                       -p11 * log2(p11) / p1;
+            if (h < best_h) {
+                best = k;
+                best_h = h;
             }
         }
+        return best;
     }
 
 };
