@@ -20,17 +20,17 @@ using namespace std::chrono;
 #define BEST_DMAX f.v * 0.48
 
 // UMDA
-#define BEST_C_UMDA 1024
+#define BEST_C_UMDA 10000
 #define BEST_L_UMDA 0.1
 
 // PBIL
-#define BEST_C_PBIL 100
+#define BEST_C_PBIL 10000
 #define BEST_L_PBIL 0.1
 #define BEST_PM 0.02
 #define BEST_M 0.05
 
 // MIMIC
-#define BEST_C_MIMIC 100000
+#define BEST_C_MIMIC 10000
 
 class Search {
 public:
