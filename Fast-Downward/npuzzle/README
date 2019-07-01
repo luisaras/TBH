@@ -1,0 +1,7 @@
+
+Contents of this directory:
+
+tile.pddl - (n^2-1)-puzzle domain definition.
+tile-with-inv.pddl - domain definition with invariants (in DKEL).
+korfNNN.pddl - problem definitions (Korf's 100 instances from AIJ vol. 27).
+random-8-NN.pddl - problem definitions (random 8-puzzle instances).
