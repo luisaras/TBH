@@ -1,10 +1,14 @@
-#include "greedy.cpp"
 #include <algorithm>
     using std::sort;
 #include <ostream>
     using std::ostream;
 #include <chrono>
 using namespace std::chrono;
+
+#include "formula.cpp"
+#include "aco.cpp"
+#include "greedy.cpp"
+#include "knuth.cpp"
 
 // Reset types
 #define NONE 0
@@ -20,11 +24,11 @@ using namespace std::chrono;
 #define BEST_DMAX f.v * 0.48
 
 // UMDA
-#define BEST_C_UMDA 1024
+#define BEST_C_UMDA 100000
 #define BEST_L_UMDA 0.1
 
 // PBIL
-#define BEST_C_PBIL 100
+#define BEST_C_PBIL 100000
 #define BEST_L_PBIL 0.1
 #define BEST_PM 0.02
 #define BEST_M 0.05
@@ -309,7 +313,7 @@ protected:
 class PBIL : public UMDA {
 public:
 
-	PBIL (Formula& f, uint c, double l, double m, double pm) : UMDA(f, 1, c, l) {
+	PBIL (Formula& f, uint c, double l, double m, double pm) : UMDA(f, c / 2, c, l) {
 		this->m = m;
 		this->pm = pm;
 	}

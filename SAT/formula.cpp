@@ -94,6 +94,14 @@ struct Formula {
         return e;
     }
 
+    inline uint litCount() const {
+    	uint n = 0;
+    	for (uint c = 0; c < this->c; c++) {
+    		n += clauses[c].size();
+    	}
+    	return n;
+    }
+
     inline uint satCount(uint clause, bool* values) const {
     	uint c = 0;
 		for (int var : clauses[clause]) {

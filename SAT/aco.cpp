@@ -1,4 +1,3 @@
-#include "formula.cpp"
 #include <cmath>
 #include <random>
 

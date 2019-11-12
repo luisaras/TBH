@@ -118,6 +118,22 @@ void testAlpha(Formula& formula, uint k, char search, bool printName = false) {
 	}
 }
 
+void testKnuth(Formula& formula, char algoritm) {
+	bool solution[formula.v];
+	uint result;
+	high_resolution_clock::time_point t1, t2;
+	t1 = high_resolution_clock::now();
+	if (algoritm == 'A') {
+		result = knuth_a(formula, solution);
+	} else if (algoritm == 'B') {
+
+	} else if (algoritm == 'D') {
+
+	}
+	t2 = high_resolution_clock::now();
+	cout << duration_cast<milliseconds>(t2 - t1).count() * 0.001f << '\t' << result << endl;
+}
+
 int main(int argc, char* argv[]) {
 	string testType(argv[1]);
 	string formulaName(argv[2]);
@@ -166,6 +182,9 @@ int main(int argc, char* argv[]) {
 		bool success = s.test(5000); // Run for 5 seconds
 		// Print results
 		cout << f.c - s.best;
+	} else if (testType == "knuth") {
+		// instance alg 
+		testKnuth(f, argv[3][0]);
 	}
     return 0;
 }
