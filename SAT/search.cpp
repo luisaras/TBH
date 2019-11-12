@@ -34,7 +34,7 @@ using namespace std::chrono;
 #define BEST_M 0.05
 
 // MIMIC
-#define BEST_C_MIMIC 100000
+#define BEST_C_MIMIC 10000
 
 class Search {
 public:
