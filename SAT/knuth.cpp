@@ -1,4 +1,6 @@
 
+#define PRINT 1
+
 struct CellA {
 	int f, b, c = 0, l = 0;
 };
@@ -25,12 +27,16 @@ uint knuth_a(Formula& formula, bool* solution) {
 		size[c] = formula.clauses[c].size();
 		start[c] = offset;
 		sort(formula.clauses[c].begin(), formula.clauses[c].end(), compareVars);
-		cout << "Clause " << c << "(START=" << offset << ", SIZE=" << size[c] << "): ";
+		if (PRINT)
+			cout << "Clause " << c 
+				 << "(START=" << offset << 
+				 ", SIZE=" << size[c] << "): ";
 		for (int lit : formula.clauses[c]) {
 			CellA& cell = cells[offset];
 			cell.l = lit > 0 ? 2 * (lit - 1) : 2 * (-lit - 1) + 1;
 			cell.c = c;
-			cout << cell.l << " ";
+			if (PRINT)
+				cout << cell.l << " ";
 			CellA& litCell = cells[cell.l];
 			litCell.c++;
 			cell.b = litCell.b;
@@ -38,26 +44,28 @@ uint knuth_a(Formula& formula, bool* solution) {
 			litCell.b = cells[litCell.b].f = offset; // Tail
 			offset++;
 		}
-		cout << endl;
+		if (PRINT)
+			cout << endl;
 	}
 
 	// Print table
-	for (uint i = 0; i < cells.size(); i++)
-		cout << "\t" << i;
-	cout << endl << "L:";
-	for (uint i = 0; i < cells.size(); i++)
-		cout << "\t" << cells[i].l;
-	cout << endl << "F:";
-	for (uint i = 0; i < cells.size(); i++)
-		cout << "\t" << cells[i].f;
-	cout << endl << "B:";
-	for (uint i = 0; i < cells.size(); i++)
-		cout << "\t" << cells[i].b;
-	cout << endl << "C:";
-	for (uint i = 0; i < cells.size(); i++)
-		cout << "\t" << cells[i].c;
-
-	cout << endl << endl;
+	if (PRINT) {
+		for (uint i = 0; i < cells.size(); i++)
+			cout << "\t" << i;
+		cout << endl << "L:";
+		for (uint i = 0; i < cells.size(); i++)
+			cout << "\t" << cells[i].l;
+		cout << endl << "F:";
+		for (uint i = 0; i < cells.size(); i++)
+			cout << "\t" << cells[i].f;
+		cout << endl << "B:";
+		for (uint i = 0; i < cells.size(); i++)
+			cout << "\t" << cells[i].b;
+		cout << endl << "C:";
+		for (uint i = 0; i < cells.size(); i++)
+			cout << "\t" << cells[i].c;
+		cout << endl << endl;
+	}
 
 	// Algoritm A
 
@@ -69,10 +77,11 @@ uint knuth_a(Formula& formula, bool* solution) {
 	}
 
 	choose: { // A2
-		cout << " CHOOSE: "
-			 << "a=" << a 
-			 << "; d=" << d 
-			 << endl; 
+		if (PRINT)
+			cout << " CHOOSE: "
+				 << "a=" << a 
+				 << "; d=" << d 
+				 << endl; 
 		l = 2 * d; // Pos lit
 		l += cells[l].c <= cells[l + 1].c; // or neg lit
 		moves[d] = l & 1 + // 0 if positive, 1 if negative
@@ -83,11 +92,12 @@ uint knuth_a(Formula& formula, bool* solution) {
 	}
 
 	remove: { // A3
-		cout << "REMOVE: "
-			 << "l^1=" << (l ^ 1)
-			 << "; m_" << d << "=" << moves[d]
-			 << "; C(l^1)=" << cells[l ^ 1].c
-			 << endl; 
+		if (PRINT)
+			cout << "REMOVE: "
+				 << "l^1=" << (l ^ 1)
+				 << "; m_" << d << "=" << moves[d]
+				 << "; C(l^1)=" << cells[l ^ 1].c
+				 << endl; 
 		// Remove l^1 from clauses
 		uint p = cells[l ^ 1].f; // visit all cells pointed by cell l^1
 		while (p >= n) {
@@ -112,9 +122,10 @@ uint knuth_a(Formula& formula, bool* solution) {
 	}
 
 	deactivate: { // A4
-		cout << "DEACTIVATE: "
-			 << "C(l)=" << cells[l].c
-			 << endl;
+		if (PRINT)
+			cout << "DEACTIVATE: "
+				 << "C(l)=" << cells[l].c
+				 << endl;
 		uint p = cells[l].f; // visit all cells pointed by cell l
 		while (p >= n) {
 			uint clause = cells[p].c;
@@ -135,10 +146,11 @@ uint knuth_a(Formula& formula, bool* solution) {
 	}
 
 	retry: { // A5
-		cout << " RETRY: "
-			 << "l=" << l
-			 << "; m_" << d << "=" << moves[d]
-			 << endl;
+		if (PRINT)
+			cout << " RETRY: "
+				 << "l=" << l
+				 << "; m_" << d << "=" << moves[d]
+				 << endl;
 		if (moves[d] < 2) {
 			moves[d] = 3 - moves[d];
 			l = 2 * d + (moves[d] & 1);
@@ -147,9 +159,10 @@ uint knuth_a(Formula& formula, bool* solution) {
 	}
 
 	backtrack: { // A6
-		cout << "BACKTRACK: "
-			 << "d=" << d
-			 << endl;
+		if (PRINT)
+			cout << "BACKTRACK: "
+				 << "d=" << d
+				 << endl;
 		if (d == 0)
 			goto fail;
 		d--;
@@ -157,9 +170,10 @@ uint knuth_a(Formula& formula, bool* solution) {
 	}
 
 	reactivate: { // A7
-		cout << "REACTIVATE: "
-			 << "l=" << l
-			 << endl;
+		if (PRINT)
+			cout << "REACTIVATE: "
+				 << "l=" << l
+				 << endl;
 		a += cells[l].c;
 		uint p = cells[l].b; // visit all cells pointed by cell l
 		while (p >= n) {
@@ -178,10 +192,11 @@ uint knuth_a(Formula& formula, bool* solution) {
 
 	unremove: { // A8
 		// Reinsert l^1 in clauses
-		cout << "UNREMOVE: "
-			 << "(l^1)=" << (l ^ 1)
-			 << "; a=" << a
-			 << endl;
+		if (PRINT)
+			cout << "UNREMOVE: "
+				 << "(l^1)=" << (l ^ 1)
+				 << "; a=" << a
+				 << endl;
 		uint p = cells[l ^ 1].f; // visit all cells pointed by cell l^1
 		while (p >= n) {
 			uint clause = cells[p].c;
@@ -192,12 +207,15 @@ uint knuth_a(Formula& formula, bool* solution) {
 	}
 
 	sucess:
-		cout << "Solution:";
+		if (PRINT)
+			cout << "Solution:";
 		for (uint v = 0; v < formula.v; v++) {
 			solution[v] = !(moves[v] & 1);
-			cout << " " << solution[v];
+			if (PRINT)
+				cout << " " << solution[v];
 		}
-		cout << endl;
+		if (PRINT)
+			cout << endl;
 		return formula.evaluate(solution);
 
 	fail:
