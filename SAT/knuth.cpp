@@ -1,5 +1,5 @@
 
-#define PRINT 1
+#define PRINT 0
 
 struct CellA {
 	int f, b, c = 0, l = 0;
@@ -7,13 +7,18 @@ struct CellA {
 
 bool compareVars(int x, int y) { 
     return abs(x) > abs(y); 
-} 
+}
+
+inline bool assert(bool v) {
+    if (!v)
+        exit(-1);
+}
 
 uint knuth_a(Formula& formula, bool* solution) {
 	// Construct lists
 	const uint n = 2 * formula.v;
 	uint size[formula.c], start[formula.c];
-	vector<CellA> cells(n + formula.litCount());
+	CellA cells[n + formula.litCount()];
 	// Literal cells
 	for (uint v = 0; v < formula.v; v++) {
 		uint pos = v * 2;
@@ -50,19 +55,19 @@ uint knuth_a(Formula& formula, bool* solution) {
 
 	// Print table
 	if (PRINT) {
-		for (uint i = 0; i < cells.size(); i++)
+		for (uint i = 0; i < offset; i++)
 			cout << "\t" << i;
 		cout << endl << "L:";
-		for (uint i = 0; i < cells.size(); i++)
+		for (uint i = 0; i < offset; i++)
 			cout << "\t" << cells[i].l;
 		cout << endl << "F:";
-		for (uint i = 0; i < cells.size(); i++)
+		for (uint i = 0; i < offset; i++)
 			cout << "\t" << cells[i].f;
 		cout << endl << "B:";
-		for (uint i = 0; i < cells.size(); i++)
+		for (uint i = 0; i < offset; i++)
 			cout << "\t" << cells[i].b;
 		cout << endl << "C:";
-		for (uint i = 0; i < cells.size(); i++)
+		for (uint i = 0; i < offset; i++)
 			cout << "\t" << cells[i].c;
 		cout << endl << endl;
 	}
@@ -206,7 +211,7 @@ uint knuth_a(Formula& formula, bool* solution) {
 		goto retry;
 	}
 
-	sucess:
+	sucess: {
 		if (PRINT)
 			cout << "Solution:";
 		for (uint v = 0; v < formula.v; v++) {
@@ -217,7 +222,155 @@ uint knuth_a(Formula& formula, bool* solution) {
 		if (PRINT)
 			cout << endl;
 		return formula.evaluate(solution);
+    }
 
-	fail:
+	fail: {
 		return 0;
+    }
+}
+
+struct CellB {
+    uint c;
+    uint l;
+};
+
+uint knuth_b(Formula& formula, bool* solution) {
+    // Watch lists (list of clauses that watch l)
+    int w[formula.v * 2];
+    for (uint l = 0; l < formula.v * 2; l++)
+        w[l] = -1;
+    int link[formula.c];
+    // Clause cells
+    uint start[formula.c + 1];
+    int L[formula.litCount()];
+    uint offset = 0;
+    for (uint c = 0; c < formula.c; c++) {
+		start[c] = offset;
+        sort(formula.clauses[c].begin(), formula.clauses[c].end(), compareVars);
+		if (PRINT)
+			cout << "Clause " << c 
+				 << "(START=" << offset << 
+				 ", SIZE=" << formula.clauses[c].size() << "): ";
+		for (int lit : formula.clauses[c]) {
+            uint l = lit > 0 ? 2 * (lit - 1) : 2 * (-lit - 1) + 1;
+            L[offset] = l;
+			if (PRINT)
+				cout << l << " ";
+            offset++;
+		}
+		if (PRINT)
+			cout << endl;
+        uint wl = L[start[c]]; // First literal
+        // Insert in the head of w[wl]
+        link[c] = w[wl];
+        w[wl] = c;
+    }
+    start[formula.c] = offset;
+    
+    uint d, l, moves[formula.v];
+    
+    initialize: { // B1
+        d = 0;
+    }
+    
+    choose: { // B2
+		if (PRINT)
+			cout << " CHOOSE: "
+				 << "d=" << d
+				 << endl; 
+        if (d >= formula.v)
+            goto success;
+        moves[d] = w[2*d] == -1 || w[2*d + 1] != -1;
+        l = 2 * d + moves[d];
+    }
+    
+    remove: { // B3
+		if (PRINT)
+			cout << "REMOVE: "
+				 << "l=" << l
+				 << "; m_" << d << "=" << moves[d]
+				 << endl; 
+        // Remove l^1 from all clauses watch lists
+        int j = w[l^1]; // First clause that watches !l
+        while (j != -1) {
+            int i = start[j]; // First cell of that clause
+            assert(j < formula.c);
+            int maxi = start[j+1]; // First cell of the previous clause
+            int jj = link[j]; // Next clause that watches !l
+            for (int k = i + 1; true; k++) {
+                if (k == maxi) {
+                    w[l^1] = j;
+                    goto retry;
+                }
+                int ll = L[k]; // Other possible literal for that clause to watch
+                if ((ll / 2) > d || (moves[ll / 2] + ll) % 2 == 0) {
+                    // Change watched literal
+                    L[i] = ll;
+                    L[k] = l^1;
+                    link[j] = w[ll];
+                    w[ll] = j;
+                    j = jj;
+                    break;
+                }
+            }
+        }
+    }
+    
+    advance: { // B4
+		if (PRINT)
+			cout << "ADVANCE: "
+				 << "d=" << d
+                 << "; l^1=" << (l^1)
+				 << endl; 
+        w[l^1] = -1;
+        d++;
+        goto choose;
+    }
+    
+    retry: { // B5
+		if (PRINT)
+			cout << "RETRY: "
+				 << "l=" << l
+				 << "; m_" << d << "=" << moves[d]
+				 << endl; 
+        if (moves[d] < 2) {
+            moves[d] = 3 - moves[d];
+            l = 2*d + (moves[d] & 1);
+            goto remove;
+        }
+    }
+    
+    backtrack: { // B6
+        if (PRINT)
+			cout << "BACKTRACK: "
+				 << "d=" << d
+				 << endl; 
+        if (d == 0) {
+            goto fail;
+        }
+        d--;
+        goto retry;
+    }
+    
+	success: {
+		if (PRINT)
+			cout << "Solution:";
+		for (uint v = 0; v < formula.v; v++) {
+			solution[v] = !(moves[v] & 1);
+			if (PRINT)
+				cout << " " << solution[v];
+		}
+		if (PRINT)
+			cout << endl;
+		return formula.evaluate(solution);
+    }
+    
+    fail: {
+        return 0;
+    }
+}
+
+uint knuth_c(Formula& formula, bool* solution) {
+    
+    return 0;
 }

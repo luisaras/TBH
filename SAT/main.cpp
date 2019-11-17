@@ -126,9 +126,9 @@ void testKnuth(Formula& formula, char algoritm) {
 	if (algoritm == 'A') {
 		result = knuth_a(formula, solution);
 	} else if (algoritm == 'B') {
-
+        result = knuth_b(formula, solution);
 	} else if (algoritm == 'D') {
-
+        result = knuth_c(formula, solution);
 	}
 	t2 = high_resolution_clock::now();
 	cout << duration_cast<milliseconds>(t2 - t1).count() * 0.001f << '\t' << result << endl;
