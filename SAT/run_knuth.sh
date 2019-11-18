@@ -1,1 +1,1 @@
-./main knuth "flat75-1" A
+./main knuth "very-simple" D

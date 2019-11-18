@@ -92,7 +92,7 @@ uint knuth_a(Formula& formula, bool* solution) {
 		moves[d] = l & 1 + // 0 if positive, 1 if negative
 			4 * (cells[l ^ 1].c == 0); // if the opposite literal does not appear
 		if (cells[l].c == a) {
-			goto sucess;
+			goto success;
 		}
 	}
 
@@ -211,7 +211,7 @@ uint knuth_a(Formula& formula, bool* solution) {
 		goto retry;
 	}
 
-	sucess: {
+	success: {
 		if (PRINT)
 			cout << "Solution:";
 		for (uint v = 0; v < formula.v; v++) {
@@ -227,12 +227,8 @@ uint knuth_a(Formula& formula, bool* solution) {
 	fail: {
 		return 0;
     }
+    
 }
-
-struct CellB {
-    uint c;
-    uint l;
-};
 
 uint knuth_b(Formula& formula, bool* solution) {
     // Watch lists (list of clauses that watch l)
@@ -370,7 +366,186 @@ uint knuth_b(Formula& formula, bool* solution) {
     }
 }
 
-uint knuth_c(Formula& formula, bool* solution) {
+uint knuth_d(Formula& formula, bool* solution) {
+    int next[formula.v];
+    int values[formula.v];
+    // Watch lists (list of clauses that watch l)
+    int w[formula.v * 2];
+    for (uint l = 0; l < formula.v * 2; l++)
+        w[l] = -1;
+    int link[formula.c];
+    // Clause cells
+    uint start[formula.c + 1];
+    int L[formula.litCount()];
+    uint offset = 0;
+    for (uint c = 0; c < formula.c; c++) {
+		start[c] = offset;
+        sort(formula.clauses[c].begin(), formula.clauses[c].end(), compareVars);
+		if (PRINT)
+			cout << "Clause " << c 
+				 << "(START=" << offset << 
+				 ", SIZE=" << formula.clauses[c].size() << "): ";
+		for (int lit : formula.clauses[c]) {
+            uint l = lit > 0 ? 2 * (lit - 1) : 2 * (-lit - 1) + 1;
+            L[offset] = l;
+			if (PRINT)
+				cout << l << " ";
+            offset++;
+		}
+		if (PRINT)
+			cout << endl;
+        uint wl = L[start[c]]; // First literal
+        // Insert in the head of w[wl]
+        link[c] = w[wl];
+        w[wl] = c;
+    }
+    start[formula.c] = offset;
+    // TODO next[c]
     
-    return 0;
+    uint d, h, t, k, f, l, moves[formula.v], h_d[formula.v];
+    
+    auto h_is_unit = [&](int ll) -> int {
+        int j = w[ll];
+        while (j != -1) {
+            int jj = link[j];
+            int p = start[j] + 1;
+            if (p == start[j - 1])
+                return 1;
+            if (values[L[p] / 2] == L[p] & 1) {
+                p++;
+                if (p == start[j - 1])
+                    return 1;
+            }
+            j = jj;
+        }
+        return 0;
+    };
+    
+    initialize: { // D1
+        moves[0] = 0;
+        d = h = t = -1;
+        for (uint k = formula.v - 1; k >= 0; k--) {
+            values[k] = -1;
+            if (w[2 * k] != -1 || w[2 * k] != -1) {
+                next[k] = h;
+                h = k;
+                if (t == -1)
+                    t = k;
+            }
+        }
+        next[t] = h;
+    }
+    
+    check_success: { // D2
+        if (t == -1)
+            goto success;
+        k = t;
+    }
+    
+    look: { // D3
+        h = next[k];
+        int f = h_is_unit(2 * h) + 2 * h_is_unit(2 * h + 1);
+        if (f == 3)
+            goto backtrack;
+        if (f == 0)
+            if (h != t) {
+                k = h;
+                goto look;
+            }
+        else {
+            moves[h_d[d-1]] = f + 3;
+            t = k;
+            goto moveon;
+        }   
+    }
+    
+    branch: { // D4
+        h = next[t];
+        moves[h_d[d+1]] = w[2*h] == -1 || w[2*h+1] != -1;
+    }
+    
+    moveon: { // D5
+        d++;
+        h_d[d] = k = h;
+        if (t == k) {
+            t = -1;
+        } else {
+            next[t] = h = next[k];
+        }
+    }
+    
+    update: { // D6
+        int b = (moves[h_d[d]] + 1) % 2;
+        values[k] = b;
+        l = 2*k + b;
+        int j = w[l];
+        w[l] = -1;
+        while (j != -1) {
+            int jj = link[j];
+            int i = start[j];
+            int p = i + 1;
+            while (values[L[p]>>1] != L[p]%2) {
+                p++;
+                int ll = L[p];
+                L[p] = l;
+                L[i] = ll;
+                p = w[ll];
+                int q = w[l^1];
+                if (p == -1 && q == -1 && values[ll / 2] == -1) {
+                    if (t == -1) {
+                        t = h = ll / 2;
+                        next[t] = h;
+                    } else {
+                        next[ll / 2] = h;
+                        h = ll / 2;
+                        next[t] = h;
+                    }
+                }
+                link[j] = p;
+                w[ll] = j;
+                j = jj;
+            }
+        }
+    }
+    
+    backtrack: { // D7
+        t = k;
+        while(moves[h_d[d]] >= 2) {
+            k = h_d[d];
+            values[k] = -1;        
+            if (w[2*k] != -1 || w[2*k+1] != -1) {
+                next[k] = h;
+                h = k;
+                next[t] = h;
+            }
+            d--;
+        }
+    }
+    
+    check_failure: { // D8
+        if (d >= 0) {
+            moves[h_d[d]] = 3 - moves[h_d[d]];
+            k = h_d[d];
+            goto moveon;
+        }
+        goto fail;
+    }
+    
+	success: {
+		if (PRINT)
+			cout << "Solution:";
+		for (uint v = 0; v < formula.v; v++) {
+			solution[v] = !(moves[v] & 1);
+			if (PRINT)
+				cout << " " << solution[v];
+		}
+		if (PRINT)
+			cout << endl;
+		return formula.evaluate(solution);
+    }
+
+	fail: {
+		return 0;
+    }
+    
 }
