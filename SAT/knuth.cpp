@@ -1,5 +1,5 @@
 
-#define PRINT 0
+#define PRINT 1
 
 struct CellA {
 	int f, b, c = 0, l = 0;
@@ -367,29 +367,27 @@ uint knuth_b(Formula& formula, bool* solution) {
 }
 
 uint knuth_d(Formula& formula, bool* solution) {
-    int next[formula.v];
-    int values[formula.v];
     // Watch lists (list of clauses that watch l)
-    int w[formula.v * 2];
-    for (uint l = 0; l < formula.v * 2; l++)
-        w[l] = -1;
-    int link[formula.c];
+    int w[formula.v * 2 + 2];
+    for (uint l = 0; l < formula.v * 2 + 2; l++)
+        w[l] = 0;
+    int link[formula.c+1];
     // Clause cells
-    uint start[formula.c + 1];
+    uint start[formula.c+2];
     int L[formula.litCount()];
     uint offset = 0;
-    for (uint c = 0; c < formula.c; c++) {
+    for (uint c = 1; c <= formula.c; c++) {
 		start[c] = offset;
-        sort(formula.clauses[c].begin(), formula.clauses[c].end(), compareVars);
+        sort(formula.clauses[c-1].begin(), formula.clauses[c-1].end(), compareVars);
 		if (PRINT)
 			cout << "Clause " << c 
 				 << "(START=" << offset << 
-				 ", SIZE=" << formula.clauses[c].size() << "): ";
-		for (int lit : formula.clauses[c]) {
+				 ", SIZE=" << formula.clauses[c-1].size() << "): ";
+		for (int lit : formula.clauses[c-1]) {
             uint l = lit > 0 ? 2 * (lit - 1) : 2 * (-lit - 1) + 1;
-            L[offset] = l;
+            L[offset] = l + 2;
 			if (PRINT)
-				cout << l << " ";
+				cout << L[offset] << " ";
             offset++;
 		}
 		if (PRINT)
@@ -399,50 +397,67 @@ uint knuth_d(Formula& formula, bool* solution) {
         link[c] = w[wl];
         w[wl] = c;
     }
-    start[formula.c] = offset;
-    // TODO next[c]
+    start[formula.c+1] = offset;
     
-    uint d, h, t, k, f, l, moves[formula.v], h_d[formula.v];
+    int d, h, t, k, f, moves[formula.v+1], h_d[formula.v+1], values[formula.v+1], next[formula.v+1];
     
+    auto m = [&](int d) -> int& {
+    	return moves[d];
+    };
+
+    auto x = [&](int d) -> int& {
+    	return values[h_d[d]];
+    };
+
     auto h_is_unit = [&](int ll) -> int {
         int j = w[ll];
-        while (j != -1) {
-            int jj = link[j];
+        while (j != 0) {
             int p = start[j] + 1;
-            if (p == start[j - 1])
+            if (p == start[j + 1])
                 return 1;
-            if (values[L[p] / 2] == L[p] & 1) {
+            while (x(L[p] / 2) == L[p] & 1) {
                 p++;
-                if (p == start[j - 1])
+                if (p == start[j + 1])
                     return 1;
             }
-            j = jj;
+            j = link[j];
         }
         return 0;
     };
     
     initialize: { // D1
-        moves[0] = 0;
-        d = h = t = -1;
-        for (uint k = formula.v - 1; k >= 0; k--) {
-            values[k] = -1;
-            if (w[2 * k] != -1 || w[2 * k] != -1) {
+    	moves[0] = d = h = t = 0;
+        for (k = formula.v; k >= 1; k--) {
+            h_d[k] = k;
+            x(k) = -1;
+            if (w[2 * k] != 0 || w[2 * k + 1] != 0) {
                 next[k] = h;
                 h = k;
-                if (t == -1)
+                if (t == 0)
                     t = k;
             }
         }
-        next[t] = h;
+        if (t != 0)
+        	next[t] = h;
     }
     
     check_success: { // D2
-        if (t == -1)
+    	if (PRINT)
+    		cout << "SUCCESS?: "
+    			 << "d=" << d
+    			 << "; h[d+1]=" << h_d[d+1]
+    			 << endl;
+        if (t == 0)
             goto success;
         k = t;
     }
     
     look: { // D3
+    	if (PRINT)
+    		cout << "LOOK FOR UNIT: "
+    			 << "k=" << k
+    			 << "; next[k]=" << next[k]
+    			 << endl;
         h = next[k];
         int f = h_is_unit(2 * h) + 2 * h_is_unit(2 * h + 1);
         if (f == 3)
@@ -453,67 +468,91 @@ uint knuth_d(Formula& formula, bool* solution) {
                 goto look;
             }
         else {
-            moves[h_d[d-1]] = f + 3;
+            m(d+1) = f + 3;
             t = k;
             goto moveon;
         }   
     }
     
     branch: { // D4
+      	if (PRINT)
+    		cout << "BRANCH: "
+    			 << "t=" << t
+    			 << "; next[t]=" << next[t]
+    			 << endl;
         h = next[t];
-        moves[h_d[d+1]] = w[2*h] == -1 || w[2*h+1] != -1;
+        m(d+1) = w[2*h] == 0 || w[2*h+1] != 0;
     }
     
     moveon: { // D5
+      	if (PRINT)
+    		cout << "MOVE ON: "
+    			 << "d=" << d
+    			 << "; k=" << k
+    			 << "; h=" << h
+    			 << "; t=" << t
+    			 << endl;
         d++;
         h_d[d] = k = h;
         if (t == k) {
-            t = -1;
+            t = 0;
         } else {
             next[t] = h = next[k];
         }
     }
     
     update: { // D6
-        int b = (moves[h_d[d]] + 1) % 2;
-        values[k] = b;
-        l = 2*k + b;
+
+        int b = (m(d)+1)%2;
+        x(k) = b;
+        int l = 2*k + b;
         int j = w[l];
-        w[l] = -1;
-        while (j != -1) {
+        w[l] = 0;
+      	if (PRINT)
+    		cout << "UPDATE: "
+    			 << "d=" << d
+    			 << "; m(d)=" << m(d)
+    			 << "; l=" << l
+    			 << endl;
+        while (j != 0) {
             int jj = link[j];
             int i = start[j];
             int p = i + 1;
-            while (values[L[p]>>1] != L[p]%2) {
+            while (x(L[p]>>1) != (L[p]&1))
                 p++;
-                int ll = L[p];
-                L[p] = l;
-                L[i] = ll;
-                p = w[ll];
-                int q = w[l^1];
-                if (p == -1 && q == -1 && values[ll / 2] == -1) {
-                    if (t == -1) {
-                        t = h = ll / 2;
-                        next[t] = h;
-                    } else {
-                        next[ll / 2] = h;
-                        h = ll / 2;
-                        next[t] = h;
-                    }
+            int ll = L[p];
+            L[p] = l;
+            L[i] = ll;
+            p = w[ll];
+            int q = w[l^1];
+            if (p == 0 && q == 0 && x(ll / 2) == -1) {
+                if (t == 0) {
+                    t = h = ll / 2;
+                } else {
+                    next[ll / 2] = h;
+                    h = ll / 2;
                 }
-                link[j] = p;
-                w[ll] = j;
-                j = jj;
+                next[t] = h;
             }
+            link[j] = p;
+            w[ll] = j;
+            j = jj;
         }
+        goto check_success;
     }
     
     backtrack: { // D7
+      	if (PRINT)
+    		cout << "BACKTRACK: "
+    			 << "d=" << d
+    			 << "; m(d)=" << m(d)
+    			 << "; k=" << k
+    			 << endl;
         t = k;
-        while(moves[h_d[d]] >= 2) {
+        while(m(d) >= 2) {
             k = h_d[d];
-            values[k] = -1;        
-            if (w[2*k] != -1 || w[2*k+1] != -1) {
+            x(k) = -1;        
+            if (w[2*k] != 0 || w[2*k+1] != 0) {
                 next[k] = h;
                 h = k;
                 next[t] = h;
@@ -523,10 +562,16 @@ uint knuth_d(Formula& formula, bool* solution) {
     }
     
     check_failure: { // D8
-        if (d >= 0) {
-            moves[h_d[d]] = 3 - moves[h_d[d]];
+      	if (PRINT)
+    		cout << "FAILURE?: "
+    			 << "d=" << d
+    			 << "; m(d)=" << m(d)
+    			 << "; h[d]=" << h_d[d]
+    			 << endl;
+        if (d > 0) {
+            m(d) = 3 - m(d);
             k = h_d[d];
-            goto moveon;
+            goto update;
         }
         goto fail;
     }
@@ -535,7 +580,7 @@ uint knuth_d(Formula& formula, bool* solution) {
 		if (PRINT)
 			cout << "Solution:";
 		for (uint v = 0; v < formula.v; v++) {
-			solution[v] = !(moves[v] & 1);
+			solution[v] = !values[v+1];
 			if (PRINT)
 				cout << " " << solution[v];
 		}
