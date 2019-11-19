@@ -1,5 +1,4 @@
-
-#define PRINT 1
+#define PRINT 0
 
 struct CellA {
 	int f, b, c = 0, l = 0;
@@ -368,26 +367,26 @@ uint knuth_b(Formula& formula, bool* solution) {
 
 uint knuth_d(Formula& formula, bool* solution) {
     // Watch lists (list of clauses that watch l)
-    int w[formula.v * 2 + 2];
-    for (uint l = 0; l < formula.v * 2 + 2; l++)
-        w[l] = 0;
-    int link[formula.c+1];
+    int w[formula.v * 2];
+    for (uint l = 0; l < formula.v * 2; l++)
+        w[l] = -1;
+    int link[formula.c];
     // Clause cells
-    uint start[formula.c+2];
+    uint start[formula.c+1];
     int L[formula.litCount()];
     uint offset = 0;
-    for (uint c = 1; c <= formula.c; c++) {
+    for (uint c = 0; c < formula.c; c++) {
 		start[c] = offset;
-        sort(formula.clauses[c-1].begin(), formula.clauses[c-1].end(), compareVars);
+        sort(formula.clauses[c].begin(), formula.clauses[c].end(), compareVars);
 		if (PRINT)
 			cout << "Clause " << c 
 				 << "(START=" << offset << 
-				 ", SIZE=" << formula.clauses[c-1].size() << "): ";
-		for (int lit : formula.clauses[c-1]) {
+				 ", SIZE=" << formula.clauses[c].size() << "): ";
+		for (int lit : formula.clauses[c]) {
             uint l = lit > 0 ? 2 * (lit - 1) : 2 * (-lit - 1) + 1;
-            L[offset] = l + 2;
+            L[offset] = l;
 			if (PRINT)
-				cout << L[offset] << " ";
+				cout << l << " ";
             offset++;
 		}
 		if (PRINT)
@@ -397,25 +396,22 @@ uint knuth_d(Formula& formula, bool* solution) {
         link[c] = w[wl];
         w[wl] = c;
     }
-    start[formula.c+1] = offset;
+    start[formula.c] = offset;
     
-    int d, h, t, k, f, moves[formula.v+1], h_d[formula.v+1], values[formula.v+1], next[formula.v+1];
-    
-    auto m = [&](int d) -> int& {
-    	return moves[d];
-    };
+    int d, h, t, k, moves[formula.v], d_var[formula.v], values[formula.v], next[formula.v];
+    // d is the search depth
+    // h, t are the first and last elements of the ring
+    // k is the current variable being set
+    // moves are the state of each variable
 
-    auto x = [&](int d) -> int& {
-    	return values[h_d[d]];
-    };
-
-    auto h_is_unit = [&](int ll) -> int {
-        int j = w[ll];
-        while (j != 0) {
+    // Checks if the given literal appears in unit clauses
+    auto h_is_unit = [&](int l) -> int {
+        int j = w[l];
+        while (j != -1) {
             int p = start[j] + 1;
             if (p == start[j + 1])
                 return 1;
-            while (x(L[p] / 2) == L[p] & 1) {
+            while (values[L[p]>>1] == (L[p]&1)) {
                 p++;
                 if (p == start[j + 1])
                     return 1;
@@ -426,52 +422,61 @@ uint knuth_d(Formula& formula, bool* solution) {
     };
     
     initialize: { // D1
-    	moves[0] = d = h = t = 0;
-        for (k = formula.v; k >= 1; k--) {
-            h_d[k] = k;
-            x(k) = -1;
-            if (w[2 * k] != 0 || w[2 * k + 1] != 0) {
+    	h = t = -1;
+        for (k = formula.v - 1; k >= 0; k--) {
+            values[k] = -1;
+            // If l or !l are being watched
+            if (w[2 * k] != -1 || w[2 * k + 1] != -1) {
                 next[k] = h;
                 h = k;
-                if (t == 0)
+                if (t == -1)
                     t = k;
             }
         }
-        if (t != 0)
-        	next[t] = h;
+        if (t != -1)
+        	next[t] = h; // Loop ring
+        d = -1;
     }
     
     check_success: { // D2
     	if (PRINT)
     		cout << "SUCCESS?: "
     			 << "d=" << d
-    			 << "; h[d+1]=" << h_d[d+1]
+    			 << "; t=" << t
     			 << endl;
-        if (t == 0)
+        if (t == -1) // No more undefined variables
             goto success;
-        k = t;
+        k = t; // Current variable is the last one in the ring
     }
     
     look: { // D3
+        h = next[k]; // Move the head to the next variable
+        int f = h_is_unit(2 * h) + 2 * h_is_unit(2 * h + 1);
     	if (PRINT)
     		cout << "LOOK FOR UNIT: "
     			 << "k=" << k
     			 << "; next[k]=" << next[k]
+    			 << "; f=" << f
     			 << endl;
-        h = next[k];
-        int f = h_is_unit(2 * h) + 2 * h_is_unit(2 * h + 1);
         if (f == 3)
+        	// Both l and !l appear in unit clauses (bad!)
             goto backtrack;
         if (f == 0)
+        	// Neither appear in unit clauses
             if (h != t) {
+            	// Head did not reach last element (we still have to search for variables in unit clauses)
                 k = h;
                 goto look;
+            } else {
+            	// No variable is in unit clauses; we need to branch
+            	goto branch;
             }
         else {
-            m(d+1) = f + 3;
+        	// Either l (f=1) or !l (f=2) appears in unit clauses
+            moves[d+1] = f + 3;
             t = k;
             goto moveon;
-        }   
+        }
     }
     
     branch: { // D4
@@ -480,53 +485,58 @@ uint knuth_d(Formula& formula, bool* solution) {
     			 << "t=" << t
     			 << "; next[t]=" << next[t]
     			 << endl;
-        h = next[t];
-        m(d+1) = w[2*h] == 0 || w[2*h+1] != 0;
+        h = next[t]; // Reset h to the beginning of the ring
+        moves[d+1] = w[2*h] == -1 || w[2*h+1] != -1; // Set move as 0 or 1
     }
     
     moveon: { // D5
       	if (PRINT)
     		cout << "MOVE ON: "
     			 << "d=" << d
-    			 << "; k=" << k
     			 << "; h=" << h
     			 << "; t=" << t
     			 << endl;
         d++;
-        h_d[d] = k = h;
-        if (t == k) {
-            t = 0;
+        d_var[d] = k = h; // Select first variable in the ring
+        if (t == h) { 
+        	// k is the last variable in the ring
+            t = -1;
         } else {
-            next[t] = h = next[k];
+        	// Remove k from the ring
+        	h = next[k];
+            next[t] = h;
         }
     }
     
     update: { // D6
-
-        int b = (m(d)+1)%2;
-        x(k) = b;
-        int l = 2*k + b;
+        bool value = !(moves[d] & 1); // 1 is positive, 0 is negative
+        values[k] = value;
+        int l = 2*k + value; // negation of chosen literal
         int j = w[l];
-        w[l] = 0;
+        w[l] = -1; // Erase l's watch list
       	if (PRINT)
     		cout << "UPDATE: "
     			 << "d=" << d
-    			 << "; m(d)=" << m(d)
-    			 << "; l=" << l
+    			 << "; k=" << k
+    			 << "; b=" << value
+    			 << "; l^1=" << l
     			 << endl;
-        while (j != 0) {
-            int jj = link[j];
+        while (j != -1) {
             int i = start[j];
+            // Pick a literal that was not falsified yet
             int p = i + 1;
-            while (x(L[p]>>1) != (L[p]&1))
-                p++;
-            int ll = L[p];
-            L[p] = l;
-            L[i] = ll;
-            p = w[ll];
-            int q = w[l^1];
-            if (p == 0 && q == 0 && x(ll / 2) == -1) {
-                if (t == 0) {
+            while (values[L[p]>>1] == (L[p]&1)) // L[p]&1 is 1 if negative and 0 if position
+                p++; 
+            // NOTE: always finds one, otherwise it would be an unit clause and detected at D3
+            int ll = L[p]; // Next watched literal
+            L[p] = l; // Old watched literal
+            L[i] = ll; // Replace
+            p = w[ll]; // Watchlist of the new watched literal
+            int q = w[ll^1]; // Watchlist of the old watched literal negated
+            if (p == -1 && q == -1 && values[ll>>1] == -1) {
+            	// If new watched literal is not defined and its watchlists were empty,
+            	// insert new variable (from new watched literal) in the ring
+                if (t == -1) { // If ring is empty
                     t = h = ll / 2;
                 } else {
                     next[ll / 2] = h;
@@ -534,6 +544,8 @@ uint knuth_d(Formula& formula, bool* solution) {
                 }
                 next[t] = h;
             }
+            // Update watchlist of new watched literal
+            int jj = link[j];
             link[j] = p;
             w[ll] = j;
             j = jj;
@@ -545,14 +557,15 @@ uint knuth_d(Formula& formula, bool* solution) {
       	if (PRINT)
     		cout << "BACKTRACK: "
     			 << "d=" << d
-    			 << "; m(d)=" << m(d)
+    			 << "; m=" << moves[d]
     			 << "; k=" << k
     			 << endl;
-        t = k;
-        while(m(d) >= 2) {
-            k = h_d[d];
-            x(k) = -1;        
-            if (w[2*k] != 0 || w[2*k+1] != 0) {
+        t = k; // Set current variable as the last in the ring (?)
+        while(d != -1 && moves[d] >= 2) { // Undo all tries that were two-sidely unsucessful
+            k = d_var[d];
+            values[k] = -1;
+            if (w[2*k] != -1 || w[2*k+1] != -1) {
+            	// Reinsert k in beginning of the ring if at least one of its watchlists is not empty
                 next[k] = h;
                 h = k;
                 next[t] = h;
@@ -565,22 +578,23 @@ uint knuth_d(Formula& formula, bool* solution) {
       	if (PRINT)
     		cout << "FAILURE?: "
     			 << "d=" << d
-    			 << "; m(d)=" << m(d)
-    			 << "; h[d]=" << h_d[d]
+    			 << "; m=" << moves[d]
+    			 << "; k=" << d_var[d]
     			 << endl;
-        if (d > 0) {
-            m(d) = 3 - m(d);
-            k = h_d[d];
+        if (d >= 0) {
+            moves[d] = 3 - moves[d];
+            k = d_var[d];
             goto update;
-        }
-        goto fail;
+        } else {
+        	goto fail;
+    	}
     }
     
 	success: {
 		if (PRINT)
 			cout << "Solution:";
 		for (uint v = 0; v < formula.v; v++) {
-			solution[v] = !values[v+1];
+			solution[v] = values[v];
 			if (PRINT)
 				cout << " " << solution[v];
 		}
