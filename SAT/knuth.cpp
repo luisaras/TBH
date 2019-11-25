@@ -306,7 +306,7 @@ uint knuth_b(Formula& formula, bool* solution) {
 		cout << endl << endl;
     }
 
-    uint d, l, moves[formula.v];
+    uint d, l, moves[formula.v], n_solutions = 0;
     
     initialize: { // B1
         d = 0;
@@ -317,8 +317,20 @@ uint knuth_b(Formula& formula, bool* solution) {
 			cout << " CHOOSE: "
 				 << "d=" << d
 				 << endl; 
-        if (d >= formula.v)
-            goto success;
+        
+    	if (d >= formula.v) {
+    		if (ALL_SOLUTIONS) {
+				// Visit solution
+				for (uint v = 0; v < formula.v; v++) {
+					solution[v] = !(moves[v] & 1);
+					cout << " " << solution[v];
+				}
+				cout << endl;
+				n_solutions++;
+				goto backtrack;
+			} else
+        		goto success;
+        }
         moves[d] = w[2*d] == -1 || w[2*d + 1] != -1;
         l = 2 * d + moves[d];
     }
@@ -385,7 +397,7 @@ uint knuth_b(Formula& formula, bool* solution) {
 				 << "d=" << d
 				 << endl; 
         if (d == 0) {
-            goto fail;
+            goto terminate;
         }
         d--;
         goto retry;
@@ -404,8 +416,8 @@ uint knuth_b(Formula& formula, bool* solution) {
 		return formula.evaluate(solution);
     }
     
-    fail: {
-        return 0;
+    terminate: {
+        return n_solutions;
     }
 }
 
